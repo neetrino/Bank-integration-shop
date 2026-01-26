@@ -4,22 +4,25 @@
 
 /**
  * Проверяет, является ли путь к изображению валидным
- * @param imagePath - путь к изображению
+ * @param imagePath - путь к изображению (может быть локальным путем или URL от Blob)
  * @returns true если изображение валидно, false если нет
  */
 export function isValidImagePath(imagePath: string | null | undefined): boolean {
   if (!imagePath) return false;
   
-  // Проверяем, что путь начинается с /images/
-  if (!imagePath.startsWith('/images/')) {
-    return false;
+  // Разрешаем локальные пути /images/...
+  if (imagePath.startsWith('/images/')) {
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'];
+    return validExtensions.some(ext => imagePath.toLowerCase().endsWith(ext));
   }
   
-  // Проверяем формат файла
-  const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'];
-  const hasValidExtension = validExtensions.some(ext => imagePath.toLowerCase().endsWith(ext));
+  // Разрешаем полные URL от Vercel Blob Storage
+  if (imagePath.startsWith('https://') && imagePath.includes('public.blob.vercel-storage.com')) {
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'];
+    return validExtensions.some(ext => imagePath.toLowerCase().endsWith(ext));
+  }
   
-  return hasValidExtension;
+  return false;
 }
 
 /**

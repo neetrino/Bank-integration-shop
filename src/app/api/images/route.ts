@@ -7,6 +7,8 @@ export async function GET() {
     const imagesDir = join(process.cwd(), 'public', 'images')
     
     // Получаем список всех файлов в папке images
+    // Эта папка используется только для статических изображений (логотипы, дефолтные изображения категорий)
+    // Новые загруженные изображения хранятся в Vercel Blob Storage
     const files = await readdir(imagesDir, { withFileTypes: true })
     
     // Фильтруем только изображения
@@ -25,11 +27,10 @@ export async function GET() {
 
     return NextResponse.json(imageFiles)
   } catch (error) {
+    // Если папка не существует или произошла ошибка, возвращаем пустой массив
+    // Это нормально, так как новые изображения хранятся в Blob Storage
     console.error('Error reading images directory:', error)
-    return NextResponse.json(
-      { error: 'Failed to load images' },
-      { status: 500 }
-    )
+    return NextResponse.json([])
   }
 }
 
