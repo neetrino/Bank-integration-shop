@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { 
   Plus, 
@@ -14,16 +14,25 @@ import {
   Filter
 } from 'lucide-react'
 import Footer from '@/components/Footer'
-import { Product, ProductStatus } from '@/types'
+import Pagination from '@/components/Pagination'
+import { Product, ProductStatus, Category } from '@/types'
 
 export default function AdminProducts() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState({
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  })
+  const prevFiltersRef = useRef({ searchTerm: '', selectedCategory: '', selectedStatus: '' })
 
   useEffect(() => {
     if (status === 'loading') return
@@ -33,15 +42,73 @@ export default function AdminProducts() {
       return
     }
 
-    fetchProducts()
+    // Загружаем категории один раз
+    fetchCategories()
   }, [session, status, router])
+
+  useEffect(() => {
+    if (status === 'loading' || !session || session.user?.role !== 'ADMIN') return
+
+    // Проверяем, изменились ли фильтры
+    const filtersChanged = 
+      prevFiltersRef.current.searchTerm !== searchTerm ||
+      prevFiltersRef.current.selectedCategory !== selectedCategory ||
+      prevFiltersRef.current.selectedStatus !== selectedStatus
+
+    // Если фильтры изменились, сбрасываем страницу на 1
+    if (filtersChanged) {
+      prevFiltersRef.current = { searchTerm, selectedCategory, selectedStatus }
+      if (currentPage !== 1) {
+        setCurrentPage(1)
+        return // fetchProducts вызовется после обновления currentPage
+      }
+    } else {
+      // Обновляем предыдущие значения фильтров
+      prevFiltersRef.current = { searchTerm, selectedCategory, selectedStatus }
+    }
+
+    fetchProducts()
+  }, [session, status, router, currentPage, searchTerm, selectedCategory, selectedStatus])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/admin/categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products')
+      setIsLoading(true)
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20'
+      })
+      
+      if (searchTerm) {
+        params.append('search', searchTerm)
+      }
+      if (selectedCategory) {
+        params.append('category', selectedCategory)
+      }
+      if (selectedStatus) {
+        params.append('status', selectedStatus)
+      }
+
+      const response = await fetch(`/api/admin/products?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
-        setProducts(data)
+        setProducts(data.products || [])
+        setPagination({
+          totalPages: data.pagination?.totalPages || 1,
+          totalItems: data.pagination?.totalItems || 0,
+          itemsPerPage: data.pagination?.itemsPerPage || 20
+        })
       }
     } catch (error) {
       console.error('Error fetching products:', error)
@@ -59,7 +126,8 @@ export default function AdminProducts() {
       })
 
       if (response.ok) {
-        setProducts(products.filter(p => p.id !== productId))
+        // Перезагружаем товары после удаления
+        fetchProducts()
       } else {
         alert('Ошибка при удалении товара')
       }
@@ -69,24 +137,27 @@ export default function AdminProducts() {
     }
   }
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = !selectedCategory || product.categoryId === selectedCategory
-    
-    // Фильтр по статусу: "all" - все товары, "special" - только особые (HIT, NEW, CLASSIC, BANNER)
-    const matchesStatus = !selectedStatus || 
-                         (selectedStatus === 'all') || 
-                         (selectedStatus === 'special' && ['HIT', 'NEW', 'CLASSIC', 'BANNER'].includes(product.status))
-    
-    return matchesSearch && matchesCategory && matchesStatus
-  })
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Прокручиваем вверх страницы при смене страницы
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
-  const categories = [...new Set(products.map(p => p.categoryId).filter(Boolean))]
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value)
+  }
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value)
+  }
+
+  const handleStatusChange = (value: string) => {
+    setSelectedStatus(value)
+  }
   
-  // Статистика по статусам
+  // Статистика по статусам (только для текущей страницы)
   const statusStats = {
-    total: products.length,
+    total: pagination.totalItems,
     regular: products.filter(p => p.status === 'REGULAR').length,
     hit: products.filter(p => p.status === 'HIT').length,
     new: products.filter(p => p.status === 'NEW').length,
@@ -178,7 +249,7 @@ export default function AdminProducts() {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                 placeholder="Поиск по названию или описанию..."
               />
@@ -191,13 +262,13 @@ export default function AdminProducts() {
               </label>
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-gray-900 bg-white"
                 style={{ color: '#111827' }}
               >
                 <option value="" style={{ color: '#111827', backgroundColor: 'white' }}>Все категории</option>
                 {categories.map(category => (
-                  <option key={category} value={category} style={{ color: '#111827', backgroundColor: 'white' }}>{category}</option>
+                  <option key={category.id} value={category.id} style={{ color: '#111827', backgroundColor: 'white' }}>{category.name}</option>
                 ))}
               </select>
             </div>
@@ -209,7 +280,7 @@ export default function AdminProducts() {
               </label>
               <select
                 value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
+                onChange={(e) => handleStatusChange(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-gray-900 bg-white"
                 style={{ color: '#111827' }}
               >
@@ -225,7 +296,7 @@ export default function AdminProducts() {
           <div className="p-6 border-b border-gray-300">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
-                Товары ({filteredProducts.length})
+                Товары ({pagination.totalItems})
               </h2>
               
               {/* Статистика по статусам */}
@@ -287,7 +358,7 @@ export default function AdminProducts() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => {
+                {products.map((product) => {
                   const statusBadge = getStatusBadge(product.status)
                   return (
                     <tr key={product.id} className="hover:bg-gray-50 transition-colors">
@@ -402,10 +473,23 @@ export default function AdminProducts() {
             </table>
           </div>
           
-          {filteredProducts.length === 0 && (
+          {products.length === 0 && !isLoading && (
             <div className="text-center py-12 text-gray-500">
               <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p>Товары не найдены</p>
+            </div>
+          )}
+
+          {/* Пагинация */}
+          {pagination.totalPages > 1 && (
+            <div className="p-6 border-t border-gray-200">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+                itemsPerPage={pagination.itemsPerPage}
+                totalItems={pagination.totalItems}
+              />
             </div>
           )}
         </div>

@@ -3,6 +3,117 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 
+// GET /api/admin/products - получить товары с пагинацией (только для админов)
+export async function GET(request: NextRequest) {
+  try {
+    // Проверяем аутентификацию
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Проверяем права администратора
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden - Admin access required' },
+        { status: 403 }
+      )
+    }
+
+    // Получаем параметры пагинации и фильтров
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const limit = parseInt(searchParams.get('limit') || '20', 10)
+    const search = searchParams.get('search') || ''
+    const category = searchParams.get('category') || ''
+    const status = searchParams.get('status') || ''
+
+    // Валидация параметров
+    const pageNum = Math.max(1, page)
+    const limitNum = Math.min(Math.max(1, limit), 100) // Максимум 100 товаров на страницу
+    const skip = (pageNum - 1) * limitNum
+
+    // Формируем условия фильтрации
+    const whereClause: any = {}
+
+    // Поиск по названию или описанию
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ]
+    }
+
+    // Фильтр по категории
+    if (category) {
+      whereClause.categoryId = category
+    }
+
+    // Фильтр по статусу
+    if (status === 'special') {
+      whereClause.status = {
+        in: ['HIT', 'NEW', 'CLASSIC', 'BANNER']
+      }
+    } else if (status) {
+      whereClause.status = status
+    }
+
+    // Получаем общее количество товаров (для пагинации)
+    const total = await prisma.product.count({
+      where: whereClause
+    })
+
+    // Получаем товары с пагинацией
+    const products = await prisma.product.findMany({
+      where: whereClause,
+      skip,
+      take: limitNum,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            isActive: true
+          }
+        }
+      }
+    })
+
+    // Нормализуем изображения
+    const normalizedProducts = products.map(product => ({
+      ...product,
+      image: (product.image && product.image.trim() !== '') 
+        ? product.image 
+        : '/images/nophoto.jpg'
+    }))
+
+    const totalPages = Math.ceil(total / limitNum)
+
+    return NextResponse.json({
+      products: normalizedProducts,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching admin products:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch products' },
+      { status: 500 }
+    )
+  }
+}
+
 // POST /api/admin/products - создать новый товар (только для админов)
 export async function POST(request: NextRequest) {
   try {
