@@ -130,11 +130,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(order, { status: 201 })
   } catch (error) {
     // Логируем полные детали только на сервере
-    console.error('Create order API error:', error)
+    logger.error('Create order API error', error)
     
     const isDev = process.env.NODE_ENV === 'development'
     if (isDev && error instanceof Error) {
-      console.error('Error details:', {
+      logger.error('Error details', {
         name: error.name,
         message: error.message,
         stack: error.stack
