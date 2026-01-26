@@ -6,11 +6,12 @@ import { authOptions } from '@/lib/auth'
 // GET /api/delivery-types/[id] - получить конкретный тип доставки
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const deliveryType = await prisma.deliveryType.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!deliveryType) {
@@ -36,7 +37,7 @@ export async function GET(
 // PUT /api/delivery-types/[id] - обновить тип доставки
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -48,12 +49,13 @@ export async function PUT(
       )
     }
 
+    const { id } = await params
     const body = await request.json()
     const { name, deliveryTime, description, price, isActive } = body
 
     // Проверяем существование
     const existingDeliveryType = await prisma.deliveryType.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!existingDeliveryType) {
@@ -71,7 +73,7 @@ export async function PUT(
       )
     }
 
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
     if (name !== undefined) updateData.name = name
     if (deliveryTime !== undefined) updateData.deliveryTime = deliveryTime
     if (description !== undefined) updateData.description = description
@@ -79,7 +81,7 @@ export async function PUT(
     if (isActive !== undefined) updateData.isActive = isActive
 
     const deliveryType = await prisma.deliveryType.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData
     })
 
@@ -107,7 +109,7 @@ export async function PUT(
 // DELETE /api/delivery-types/[id] - удалить тип доставки
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -119,9 +121,10 @@ export async function DELETE(
       )
     }
 
+    const { id } = await params
     // Проверяем существование
     const existingDeliveryType = await prisma.deliveryType.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!existingDeliveryType) {
@@ -132,7 +135,7 @@ export async function DELETE(
     }
 
     await prisma.deliveryType.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({

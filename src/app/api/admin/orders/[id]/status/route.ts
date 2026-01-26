@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth'
 // PATCH /api/admin/orders/[id]/status - изменить статус заказа (только для админов)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Проверяем аутентификацию
@@ -27,6 +27,7 @@ export async function PATCH(
       )
     }
 
+    const { id } = await params
     // Получаем данные из запроса
     const body = await request.json()
     const { status } = body
@@ -42,7 +43,7 @@ export async function PATCH(
 
     // Проверяем существование заказа
     const existingOrder = await prisma.order.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!existingOrder) {
@@ -54,7 +55,7 @@ export async function PATCH(
 
     // Обновляем статус заказа
     const updatedOrder = await prisma.order.update({
-      where: { id: params.id },
+      where: { id },
       data: { status },
       include: {
         user: {

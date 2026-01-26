@@ -90,8 +90,9 @@ export async function GET(request: NextRequest) {
     
     return response
   } catch (error) {
+    const queryParam = new URL(request.url).searchParams.get('q')
     console.error('Error in instant search:', error)
-    console.error('Query:', query)
+    console.error('Query:', queryParam)
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined

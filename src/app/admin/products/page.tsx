@@ -321,7 +321,7 @@ export default function AdminProducts() {
                       {/* Категория */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-900">
-                          {product.category?.name || product.categoryId || 'Без категории'}
+                          {(product as Product & { category?: { name: string } }).category?.name || product.categoryId || 'Без категории'}
                         </span>
                       </td>
                       

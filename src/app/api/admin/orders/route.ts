@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
+import { OrderStatus } from '@/types'
 
 // GET /api/admin/orders - получить все заказы (только для админов)
 export async function GET(request: NextRequest) {
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
 
     // Строим фильтр по статусу
-    const whereClause = status ? { status } : {}
+    const whereClause: { status?: OrderStatus } = status ? { status: status as OrderStatus } : {}
 
     // Получаем заказы с пагинацией
     const [orders, totalCount] = await Promise.all([
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
     // Вычисляем общую сумму для каждого заказа
     const ordersWithTotal = orders.map(order => ({
       ...order,
-      totalAmount: order.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0)
+      totalAmount: order.items.reduce((sum: number, item) => sum + (item.product.price * item.quantity), 0)
     }))
 
     return NextResponse.json({
