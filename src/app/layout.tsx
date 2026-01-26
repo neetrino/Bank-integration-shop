@@ -38,19 +38,17 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased overflow-x-hidden bg-white`} suppressHydrationWarning>
         <ServiceWorkerProvider />
         <ClientProviders>
-          <>
-            <Header />
-            <PullToRefresh>
-              {children}
-            </PullToRefresh>
-            <MobileBottomNav />
-            
-            {/* Глобальная плавающая кнопка чата - зафиксирована в правом нижнем углу экрана */}
-            <ChatButton 
-              instagramUrl="https://www.instagram.com/welcome_baby_armenia/?utm_source=neetrino.com"
-              facebookUrl="https://www.facebook.com/welcomebaby.yerevan"
-            />
-          </>
+          <Header />
+          <PullToRefresh>
+            {children}
+          </PullToRefresh>
+          <MobileBottomNav />
+          
+          {/* Глобальная плавающая кнопка чата - зафиксирована в правом нижнем углу экрана */}
+          <ChatButton 
+            instagramUrl="https://www.instagram.com/welcome_baby_armenia/?utm_source=neetrino.com"
+            facebookUrl="https://www.facebook.com/welcomebaby.yerevan"
+          />
         </ClientProviders>
       </body>
     </html>

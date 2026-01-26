@@ -101,6 +101,21 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       try {
+        // Дополнительная проверка на chrome-extension перед кэшированием
+        try {
+          const url = new URL(request.url)
+          if (url.protocol === 'chrome-extension:' || 
+              url.protocol === 'moz-extension:' || 
+              url.protocol === 'safari-extension:' ||
+              (url.protocol !== 'http:' && url.protocol !== 'https:')) {
+            // Для неподдерживаемых схем - просто делаем fetch без кэширования
+            return fetch(request)
+          }
+        } catch (urlError) {
+          // Если не удалось создать URL, пропускаем этот запрос
+          return fetch(request)
+        }
+
         // Сначала проверяем кэш
         const cachedResponse = await caches.match(request)
         if (cachedResponse) {
@@ -112,15 +127,24 @@ self.addEventListener('fetch', (event) => {
         const networkResponse = await fetch(request)
         
         // Кэшируем только успешные ответы и только статические ресурсы (НЕ файлы Next.js)
+        // И только если это не chrome-extension запрос
         if (networkResponse.status === 200 && 
             !request.url.includes('/api/') &&
             !request.url.includes('_next/static/') &&
             !request.url.includes('_next/static/chunks/') &&
             !request.url.includes('_next/static/css/') &&
-            !request.url.includes('_next/static/media/')) {
-          const responseClone = networkResponse.clone()
-          const cache = await caches.open(CACHE_NAME)
-          await cache.put(request, responseClone)
+            !request.url.includes('_next/static/media/') &&
+            !request.url.startsWith('chrome-extension:') &&
+            !request.url.startsWith('moz-extension:') &&
+            !request.url.startsWith('safari-extension:')) {
+          try {
+            const responseClone = networkResponse.clone()
+            const cache = await caches.open(CACHE_NAME)
+            await cache.put(request, responseClone)
+          } catch (cacheError) {
+            // Игнорируем ошибки кэширования (например, для chrome-extension)
+            console.warn('Service Worker: Cache put failed (ignored):', cacheError)
+          }
         }
         
         return networkResponse
