@@ -239,7 +239,7 @@ export default function RegisterPage() {
               />
               <label className="text-sm text-gray-700">
                 Ես ընդունում եմ{' '}
-                <Link href="/privacy" className="text-[#f3d98c] hover:text-[#f3d98c] underline">
+                <Link href="/privacy-policy" className="text-[#f3d98c] hover:text-[#f3d98c] underline">
                   օգտագործման պայմանները և գաղտնիության քաղաքականությունը
                 </Link>
               </label>

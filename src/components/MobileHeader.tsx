@@ -272,7 +272,7 @@ export default function MobileHeader() {
               {/* Legal Links */}
               <div className="flex justify-center space-x-4 mb-4">
                 <Link 
-                  href="/privacy" 
+                  href="/privacy-policy" 
                   className="text-xs text-gray-400 hover:text-[#f3d98c] transition-colors duration-200 underline decoration-dotted underline-offset-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -280,7 +280,7 @@ export default function MobileHeader() {
                 </Link>
                 <span className="text-xs text-gray-300">•</span>
                 <Link 
-                  href="/terms" 
+                  href="/terms-and-conditions" 
                   className="text-xs text-gray-400 hover:text-[#f3d98c] transition-colors duration-200 underline decoration-dotted underline-offset-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
