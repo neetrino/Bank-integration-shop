@@ -106,13 +106,16 @@ export default function MultiImageSelector({
         if (response.ok) {
           const result = await response.json()
           
+          // Используем полный URL от Blob (url) - это важно для работы с Vercel Blob Storage
+          const imageUrl = result.url || result.path
+          
           // Добавляем новое изображение в локальный список
           setImages(prev => [...prev, {
             name: file.name,
-            path: result.path
+            path: imageUrl
           }])
           
-          newImages.push(result.path)
+          newImages.push(imageUrl)
         } else {
           const error = await response.json()
           alert(`Ошибка загрузки ${file.name}: ${error.message}`)

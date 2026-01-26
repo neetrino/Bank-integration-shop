@@ -65,14 +65,17 @@ export async function POST(request: NextRequest) {
     const randomString = Math.random().toString(36).substring(2, 8)
     const fileName = `images/${timestamp}-${randomString}.${extension}`
 
-    // Загружаем файл в Vercel Blob или локальную файловую систему
+    // Загружаем файл в Vercel Blob Storage
     const { url, path } = await uploadFile(file, fileName)
 
     // Возвращаем URL файла
+    // url - полный URL от Blob (https://...public.blob.vercel-storage.com/...)
+    // path - относительный путь (/images/...)
+    // Используем url как основной, так как это полный URL для работы с Blob
     return NextResponse.json({
       success: true,
-      path: path || url,
-      url: url,
+      path: path || url, // Для обратной совместимости
+      url: url, // Полный URL от Blob - используется для отображения
       fileName: fileName.split('/').pop() || fileName
     })
 

@@ -91,15 +91,18 @@ export default function ImageSelector({ value, onChange, className = '' }: Image
         if (response.ok) {
           const result = await response.json()
           
+          // Используем полный URL от Blob (url) - это важно для работы с Vercel Blob Storage
+          const imageUrl = result.url || result.path
+          
           // Добавляем новое изображение в список
           setImages(prev => [...prev, {
             name: file.name,
-            path: result.path
+            path: imageUrl
           }])
           
           // Если это первое загруженное изображение, выбираем его
           if (i === 0 && !value) {
-            onChange(result.path)
+            onChange(imageUrl)
           }
         } else {
           const error = await response.json()

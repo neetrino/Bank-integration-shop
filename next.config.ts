@@ -20,12 +20,17 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     unoptimized: false, // Включаем оптимизатор обратно после исправления конфига
-    // Разрешаем локальные изображения
+    // Разрешаем локальные изображения и Vercel Blob Storage
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'welcomebaby.neetrino.com',
         pathname: '/images/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com',
+        pathname: '/**',
       },
     ],
     // Разрешаем локальные пути
