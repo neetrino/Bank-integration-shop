@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
+import { uploadFile } from '@/lib/blob'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,23 +41,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Путь к файлу логотипа
-    const logoPath = join(process.cwd(), 'public', 'logo.png')
+    // Определяем расширение файла
+    const extension = file.name.split('.').pop()?.toLowerCase() || 'png'
 
-    // Конвертируем файл в буфер и сохраняем
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(logoPath, buffer)
+    // Загружаем логотип в Blob
+    const fileName = `logo/logo-${Date.now()}.${extension}`
+    const { url, path } = await uploadFile(file, fileName)
 
-    // Возвращаем успешный ответ с timestamp для обхода кэша
-    const timestamp = Date.now()
+    // Возвращаем успешный ответ
     return NextResponse.json({ 
       success: true,
       message: 'Logo updated successfully',
-      url: `/logo.png?v=${timestamp}`
+      url: url,
+      path: path || url
     })
   } catch (error) {
-    console.error('Logo upload error:', error)
+    logger.error('Logo upload error', error)
     return NextResponse.json(
       { error: 'Failed to update logo' },
       { status: 500 }

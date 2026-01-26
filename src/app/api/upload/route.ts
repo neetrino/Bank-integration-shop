@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
+import { uploadFile } from '@/lib/blob'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,41 +47,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-
-    // Создаем уникальное имя файла (безопасное, без оригинального имени)
+    // Создаем уникальное имя файла
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 10)
-    const filename = `${timestamp}-${randomString}.${extension}`
-    
-    // Путь к папке public
-    const uploadDir = join(process.cwd(), 'public', folder)
-    
-    // Создаем папку если не существует
-    try {
-      await mkdir(uploadDir, { recursive: true })
-    } catch (error) {
-      // Папка уже существует
-    }
+    const fileName = `${folder}/${timestamp}-${randomString}.${extension}`
 
-    // Путь к файлу
-    const filepath = join(uploadDir, filename)
-    
-    // Сохраняем файл
-    await writeFile(filepath, buffer)
-
-    // Возвращаем URL файла
-    const fileUrl = `/${folder}/${filename}`
+    // Загружаем файл в Vercel Blob
+    const { url, path } = await uploadFile(file, fileName)
 
     return NextResponse.json({ 
-      url: fileUrl,
-      filename: filename,
+      url: url,
+      path: path || url,
+      filename: fileName.split('/').pop() || fileName,
       size: file.size,
       type: file.type
     })
   } catch (error) {
-    console.error('Upload error:', error)
+    logger.error('Upload error', error)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 }

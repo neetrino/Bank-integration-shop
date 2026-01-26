@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
+import { uploadFile } from '@/lib/blob'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,44 +60,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Генерируем уникальное имя файла (UUID-подобное)
+    // Генерируем уникальное имя файла
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 8)
-    const fileName = `${timestamp}-${randomString}.${extension}`
+    const fileName = `images/${timestamp}-${randomString}.${extension}`
 
-    // Определяем директорию сохранения
-    // ВАЖНО: по умолчанию и в development, и в production сохраняем в public/images,
-    // чтобы поведение сервера совпадало с локальным без дополнительной настройки Nginx.
-    // При необходимости можно переопределить через переменную окружения UPLOAD_DIR.
-    const defaultDir = join(process.cwd(), 'public', 'images')
-    const uploadDir = process.env.UPLOAD_DIR || defaultDir
+    // Загружаем файл в Vercel Blob или локальную файловую систему
+    const { url, path } = await uploadFile(file, fileName)
 
-    const filePath = join(uploadDir, fileName)
-
-    // Создаем папку images если её нет
-    try {
-      await mkdir(uploadDir, { recursive: true })
-    } catch (error) {
-      // Папка уже существует, это нормально
-    }
-
-    // Конвертируем файл в буфер и сохраняем
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
-
-    // Возвращаем относительный URL (префикс можно переопределить)
-    const urlPrefix = (process.env.UPLOAD_URL_PREFIX || '/images').replace(/\/$/, '')
-    const imagePath = `${urlPrefix}/${fileName}`
-
+    // Возвращаем URL файла
     return NextResponse.json({
       success: true,
-      path: imagePath,
-      fileName: fileName
+      path: path || url,
+      url: url,
+      fileName: fileName.split('/').pop() || fileName
     })
 
   } catch (error) {
-    console.error('Upload error:', error)
+    logger.error('Upload image error', error)
     return NextResponse.json(
       { error: 'Failed to upload image' },
       { status: 500 }
