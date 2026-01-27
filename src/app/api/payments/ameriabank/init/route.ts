@@ -16,12 +16,12 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     const body = await request.json()
-    const { orderId, amount, currency = 'AMD', description, backUrl } = body
+    const { orderId, orderData, amount, currency = 'AMD', description, backUrl } = body
 
     // Validate required fields
-    if (!orderId || !amount) {
+    if (!amount) {
       return NextResponse.json(
-        { error: 'Missing required fields: orderId and amount are required' },
+        { error: 'Missing required field: amount is required' },
         { status: 400 }
       )
     }
@@ -34,42 +34,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate order exists
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { items: true },
-    })
-
-    if (!order) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      )
-    }
-
-    // Check if order belongs to user (if authenticated)
-    if (session?.user?.id && order.userId && order.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized: order does not belong to user' },
-        { status: 403 }
-      )
-    }
-
-    // Validate order amount matches
-    if (Math.abs(order.total - amount) > 0.01) {
-      logger.warn('Order amount mismatch', {
-        orderId,
-        orderTotal: order.total,
-        requestedAmount: amount,
+    // If orderId is provided, validate order exists (for backward compatibility)
+    // Otherwise, we expect orderData to create order after payment
+    let existingOrder = null
+    if (orderId) {
+      existingOrder = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { items: true },
       })
+
+      if (!existingOrder) {
+        return NextResponse.json(
+          { error: 'Order not found' },
+          { status: 404 }
+        )
+      }
+
+      // Check if order belongs to user (if authenticated)
+      if (session?.user?.id && existingOrder.userId && existingOrder.userId !== session.user.id) {
+        return NextResponse.json(
+          { error: 'Unauthorized: order does not belong to user' },
+          { status: 403 }
+        )
+      }
+    } else if (!orderData) {
+      return NextResponse.json(
+        { error: 'Missing required field: either orderId or orderData is required' },
+        { status: 400 }
+      )
     }
 
     // Get currency code
     const currencyCode = CURRENCY_CODES[currency as keyof typeof CURRENCY_CODES] || CURRENCY_CODES.AMD
 
     // Generate OrderID for bank (must be integer)
-    // In test mode, use range 3584001-3585000 as per bank instructions
-    // In production, use order ID converted to integer
     const isTest = process.env.AMERIA_BANK_ENVIRONMENT === 'test'
     let bankOrderID: number
 
@@ -77,21 +75,33 @@ export async function POST(request: NextRequest) {
       // Generate random OrderID in test range
       bankOrderID = Math.floor(Math.random() * (3585000 - 3584001 + 1)) + 3584001
     } else {
-      // Convert order ID to integer (use hash or numeric part)
-      // For now, use a hash of the order ID to get a consistent integer
-      const hash = orderId.split('').reduce((acc, char) => {
-        const charCode = char.charCodeAt(0)
-        return ((acc << 5) - acc) + charCode
-      }, 0)
-      bankOrderID = Math.abs(hash) % 10000000 // Ensure it's a reasonable size
+      // Generate unique OrderID based on timestamp and random
+      const timestamp = Date.now()
+      const random = Math.floor(Math.random() * 10000)
+      bankOrderID = (timestamp % 10000000) * 10000 + random
     }
 
     // Create payment description
-    const paymentDescription = description || `Order #${orderId}`
+    const paymentDescription = description || 'Order payment'
 
     // Get base URL for callback
     const baseUrl = process.env.NEXTAUTH_URL || request.headers.get('origin') || 'http://localhost:3000'
     const callbackUrl = backUrl || `${baseUrl}/api/payments/ameriabank/callback`
+
+    // Prepare opaque data: if order exists, use orderId; otherwise encode orderData
+    let opaqueData: string
+    if (orderId) {
+      // Backward compatibility: use orderId
+      opaqueData = orderId
+    } else {
+      // Encode orderData as base64 JSON to pass through Opaque field
+      // Opaque field has limited length, so we'll use a more compact format
+      const orderDataWithSession = {
+        ...orderData,
+        userId: session?.user?.id || null,
+      }
+      opaqueData = Buffer.from(JSON.stringify(orderDataWithSession)).toString('base64')
+    }
 
     // Initialize payment
     const ameriaService = new AmeriaBankService()
@@ -101,18 +111,15 @@ export async function POST(request: NextRequest) {
       Currency: currencyCode,
       Description: paymentDescription,
       BackURL: callbackUrl,
-      Opaque: orderId, // Store our order ID in Opaque for callback identification
+      Opaque: opaqueData, // Store order data in Opaque for callback
     })
 
-    // Store payment information in database (you may want to create a Payment model)
-    // For now, we'll store it in order metadata or create a separate payment record
-    // This is a simplified version - you might want to create a proper Payment model
-
     logger.info('Ameria Bank payment initialized', {
-      orderId,
+      orderId: orderId || 'pending',
       paymentID: initResponse.PaymentID,
       bankOrderID,
       amount,
+      hasOrderData: !!orderData,
     })
 
     // Get payment URL for redirect

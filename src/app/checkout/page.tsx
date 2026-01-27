@@ -137,6 +137,11 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Защита от двойного клика
+    if (isSubmitting) {
+      return
+    }
+    
     if (!validateForm()) {
       return
     }
@@ -156,7 +161,7 @@ export default function CheckoutPage() {
     try {
       const total = getTotalPrice()
       
-      // Send order to API
+      // Prepare order data
       const orderData = {
         ...formData,
         items: items.map(item => ({
@@ -167,6 +172,51 @@ export default function CheckoutPage() {
         total
       }
 
+      // Handle payment based on payment method
+      if (formData.paymentMethod === 'ameriabank') {
+        // For bank payment: DON'T create order yet, initialize payment first
+        // Order will be created only after successful payment in callback
+        try {
+          const paymentResponse = await fetch('/api/payments/ameriabank/init', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              orderData: orderData, // Pass order data to create after payment
+              amount: total,
+              currency: 'AMD',
+              description: `Order payment`,
+            }),
+          })
+
+          if (!paymentResponse.ok) {
+            const errorData = await paymentResponse.json().catch(() => ({}))
+            const errorMessage = errorData.error || paymentResponse.statusText || 'Неизвестная ошибка'
+            
+            alert(`Ошибка при инициализации платежа: ${errorMessage}\n\nПопробуйте еще раз или выберите другой способ оплаты.`)
+            setIsSubmitting(false)
+            return
+          }
+
+          const paymentData = await paymentResponse.json()
+          
+          // DON'T clear cart yet - will be cleared only after successful payment
+          // DON'T create order yet - will be created in callback after successful payment
+          
+          // Redirect to bank payment page (не сбрасываем isSubmitting, чтобы предотвратить повторную отправку)
+          window.location.href = paymentData.paymentUrl
+          return
+        } catch (paymentError) {
+          console.error('Payment initialization error:', paymentError)
+          const errorMessage = paymentError instanceof Error ? paymentError.message : 'Неизвестная ошибка'
+          alert(`Ошибка при инициализации платежа: ${errorMessage}\n\nПопробуйте еще раз или выберите другой способ оплаты.`)
+          setIsSubmitting(false)
+          return
+        }
+      }
+      
+      // For cash/card payments: create order immediately
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -188,55 +238,15 @@ export default function CheckoutPage() {
       const order = await response.json()
       console.log('Order created successfully:', order.id)
       
-      // Handle payment based on payment method
-      if (formData.paymentMethod === 'ameriabank') {
-        // Initialize Ameria Bank payment
-        try {
-          const paymentResponse = await fetch('/api/payments/ameriabank/init', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              orderId: order.id,
-              amount: total,
-              currency: 'AMD',
-              description: `Order #${order.id}`,
-            }),
-          })
-
-          if (!paymentResponse.ok) {
-            const errorData = await paymentResponse.json().catch(() => ({}))
-            throw new Error(`Failed to initialize payment: ${errorData.error || paymentResponse.statusText}`)
-          }
-
-          const paymentData = await paymentResponse.json()
-          
-          // Clear cart before redirecting
-          clearCart()
-          
-          // Redirect to bank payment page
-          window.location.href = paymentData.paymentUrl
-          return
-        } catch (paymentError) {
-          console.error('Payment initialization error:', paymentError)
-          alert('Ошибка при инициализации платежа. Попробуйте еще раз или выберите другой способ оплаты.')
-          setIsSubmitting(false)
-          return
-        }
-      }
-      
-      // For cash/card payments, just redirect to success page
-      console.log('Order created successfully, redirecting to order-success page')
-      
-      // Clear cart first
+      // Clear cart after successful order creation
       clearCart()
-      // Force redirect to success page using window.location
+      
+      // Redirect to success page
       window.location.href = '/order-success'
     } catch (error) {
       console.error('Error submitting order:', error)
-      alert('Произошла ошибка при оформлении заказа. Попробуйте еще раз.')
-    } finally {
+      const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка'
+      alert(`Произошла ошибка при оформлении заказа: ${errorMessage}\n\nПопробуйте еще раз.`)
       setIsSubmitting(false)
     }
   }
@@ -655,7 +665,7 @@ export default function CheckoutPage() {
                       <CreditCard className="inline h-4 w-4 mr-1" />
                       Способ оплаты *
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <label className={`relative p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg ${
                         formData.paymentMethod === 'cash' 
                           ? 'border-orange-500 bg-orange-50 shadow-md' 
@@ -709,6 +719,37 @@ export default function CheckoutPage() {
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">Карта</h3>
                           <p className="text-sm text-gray-600">Оплата картой через терминал курьера</p>
                           {formData.paymentMethod === 'card' && (
+                            <div className="absolute top-4 right-4">
+                              <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                                <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </label>
+
+                      <label className={`relative p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg ${
+                        formData.paymentMethod === 'ameriabank' 
+                          ? 'border-orange-500 bg-orange-50 shadow-md' 
+                          : 'border-gray-300 hover:border-orange-300'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="ameriabank"
+                          checked={formData.paymentMethod === 'ameriabank'}
+                          onChange={handleInputChange}
+                          className="sr-only"
+                        />
+                        <div className="text-center">
+                          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <CreditCard className="h-8 w-8 text-purple-600" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">Онлайн оплата</h3>
+                          <p className="text-sm text-gray-600">Оплата картой через Ameria Bank</p>
+                          {formData.paymentMethod === 'ameriabank' && (
                             <div className="absolute top-4 right-4">
                               <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
                                 <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">

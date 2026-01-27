@@ -33,16 +33,39 @@ export async function GET(request: NextRequest) {
     })
 
     // Validate required parameters
-    if (!callbackParams.paymentID || !callbackParams.resposneCode) {
-      logger.error('Missing required callback parameters', callbackParams)
+    if (!callbackParams.paymentID) {
+      logger.error('Missing paymentID in callback', callbackParams)
       return NextResponse.redirect(
-        new URL('/order-success?error=missing_parameters', request.url)
+        new URL('/order-success?error=missing_payment_id', request.url)
       )
     }
 
     // Get payment details from bank
     const ameriaService = new AmeriaBankService()
-    const paymentDetails = await ameriaService.getPaymentDetails(callbackParams.paymentID)
+    let paymentDetails
+    
+    try {
+      paymentDetails = await ameriaService.getPaymentDetails(callbackParams.paymentID)
+    } catch (error) {
+      logger.error('Failed to get payment details', error)
+      // Если не удалось получить детали, используем данные из callback параметров
+      const orderId = callbackParams.opaque || ''
+      const responseCode = callbackParams.resposneCode || 'unknown'
+      
+      // Определяем ошибку по responseCode из URL
+      let errorMessage = 'Ошибка при обработке платежа'
+      if (responseCode === '01') {
+        errorMessage = 'Заказ с таким номером уже существует'
+      } else if (responseCode === '0-1') {
+        errorMessage = 'Таймаут обработки платежа'
+      } else if (responseCode && responseCode !== '00') {
+        errorMessage = `Платеж не прошел. Код ошибки: ${responseCode}`
+      }
+      
+      return NextResponse.redirect(
+        new URL(`/order-success?error=payment_failed&orderId=${orderId}&message=${encodeURIComponent(errorMessage)}&paymentId=${callbackParams.paymentID}&responseCode=${responseCode}`, request.url)
+      )
+    }
 
     logger.info('Payment details retrieved', {
       paymentID: callbackParams.paymentID,
@@ -52,120 +75,214 @@ export async function GET(request: NextRequest) {
       paymentState: paymentDetails.PaymentState,
     })
 
-    // Identify order using Opaque (our order ID) or bank OrderID
+    // Parse Opaque data - can be either orderId (string) or base64-encoded orderData (JSON)
     let orderId: string | null = null
+    let orderData: any = null
+    let existingOrder = null
 
     if (callbackParams.opaque) {
-      // Use Opaque field which contains our order ID
-      orderId = callbackParams.opaque
-    } else {
-      // Fallback: try to find order by bank OrderID (if we stored it)
-      // This is less reliable, so prefer using Opaque
-      logger.warn('No Opaque parameter, trying to find order by bank OrderID', {
-        bankOrderID: paymentDetails.OrderID,
+      try {
+        // Try to decode as base64 JSON (new format with orderData)
+        const decoded = Buffer.from(callbackParams.opaque, 'base64').toString('utf-8')
+        const parsed = JSON.parse(decoded)
+        
+        // If it's an object with orderData structure, use it
+        if (parsed && typeof parsed === 'object' && parsed.items) {
+          orderData = parsed
+          logger.info('Decoded orderData from Opaque', {
+            hasItems: !!orderData.items,
+            userId: orderData.userId,
+          })
+        } else {
+          // Otherwise treat as orderId (backward compatibility)
+          orderId = callbackParams.opaque
+        }
+      } catch (e) {
+        // Not base64 JSON, treat as plain orderId (backward compatibility)
+        orderId = callbackParams.opaque
+      }
+    }
+
+    // If we have orderId, try to find existing order (backward compatibility)
+    if (orderId) {
+      existingOrder = await prisma.order.findUnique({
+        where: { id: orderId },
       })
     }
 
-    if (!orderId) {
-      logger.error('Cannot identify order from callback', {
+    // If no orderData and no existing order, we can't proceed
+    if (!orderData && !existingOrder) {
+      logger.error('Cannot identify order from callback - no orderData and no existing order', {
+        callbackParams,
+        paymentDetails,
+        hasOpaque: !!callbackParams.opaque,
+      })
+      return NextResponse.redirect(
+        new URL('/order-success?error=order_not_found', request.url)
+      )
+    }
+
+    // Check response code from callback URL first (more reliable for errors)
+    const callbackResponseCode = callbackParams.resposneCode
+    
+    // Если responseCode из URL не "00", это ошибка
+    // "00" - единственный код успешного платежа согласно документации
+    if (callbackResponseCode && callbackResponseCode !== '00') {
+      // Это ошибка платежа
+      const responseCode = callbackResponseCode
+      let errorMessage = 'Платеж не прошел'
+      
+      // Определяем ошибку по коду из документации
+      if (responseCode === '01') {
+        errorMessage = 'Заказ с таким номером уже существует'
+      } else if (responseCode === '0-1') {
+        errorMessage = 'Таймаут обработки платежа (превышено время ожидания)'
+      } else if (responseCode === '0-100') {
+        errorMessage = 'Попыток оплаты не было'
+      } else if (responseCode === '0-2000') {
+        errorMessage = 'Карта в черном списке'
+      } else if (responseCode === '0-2001') {
+        errorMessage = 'IP адрес в черном списке'
+      } else if (responseCode === '0-2002') {
+        errorMessage = 'Превышен лимит суммы платежа'
+      } else if (responseCode === '0-2004') {
+        errorMessage = 'SSL без CVC запрещен'
+      } else if (responseCode === '0-2005') {
+        errorMessage = 'Ошибка проверки подписи 3DSecure'
+      } else if (responseCode === '0-2006') {
+        errorMessage = '3DSecure отклонен банком-эмитентом'
+      } else if (responseCode === '0-2007') {
+        errorMessage = 'Превышено время ожидания ввода данных карты'
+      } else if (responseCode === '0-2013') {
+        errorMessage = 'Исчерпаны попытки оплаты'
+      } else if (responseCode === '0100') {
+        errorMessage = 'Банк-эмитент запретил онлайн транзакции'
+      } else if (responseCode === '0101') {
+        errorMessage = 'Срок действия карты истек'
+      } else if (responseCode === '0111') {
+        errorMessage = 'Неверный номер карты'
+      } else if (responseCode === '0116') {
+        errorMessage = 'Недостаточно средств на карте'
+      } else if (responseCode === '02001') {
+        errorMessage = 'Мошенническая транзакция'
+      } else if (responseCode === '02003') {
+        errorMessage = 'SSL транзакции запрещены для мерчанта'
+      } else if (responseCode.startsWith('0-')) {
+        errorMessage = `Ошибка обработки платежа: ${paymentDetails.TrxnDescription || paymentDetails.Description || responseCode}`
+      } else if (responseCode !== '00') {
+        // Общая ошибка с описанием от банка, если есть
+        errorMessage = paymentDetails.TrxnDescription || 
+                      paymentDetails.Description || 
+                      `Платеж отклонен. Код ошибки: ${responseCode}`
+      }
+      
+      logger.warn('Payment failed based on callback response code', {
+        orderId: orderId || 'pending',
+        paymentID: callbackParams.paymentID,
+        responseCode: callbackResponseCode,
+        orderStatus: paymentDetails.OrderStatus,
+        paymentState: paymentDetails.PaymentState,
+        errorMessage,
+        trxnDescription: paymentDetails.TrxnDescription,
+        hasOrderData: !!orderData,
+      })
+      
+      // Payment failed - DON'T create order, just show error
+      // If order already exists (backward compatibility), don't update it
+      const errorOrderId = existingOrder?.id || null
+      return NextResponse.redirect(
+        new URL(`/order-success?error=payment_failed${errorOrderId ? `&orderId=${errorOrderId}` : ''}&message=${encodeURIComponent(errorMessage)}&paymentId=${callbackParams.paymentID}&responseCode=${responseCode}`, request.url)
+      )
+    }
+    
+    // Payment successful (responseCode = "00")
+    // Check payment status
+    const isSuccessful = ameriaService.isPaymentSuccessful(paymentDetails)
+    const isApproved = ameriaService.isPaymentApproved(paymentDetails)
+
+    // Create order if it doesn't exist (new flow)
+    let finalOrderId: string
+    if (!existingOrder && orderData) {
+      // Create order from orderData
+      const newOrder = await prisma.order.create({
+        data: {
+          userId: orderData.userId || null,
+          name: orderData.name || 'Guest Customer',
+          status: isSuccessful ? 'CONFIRMED' : 'PENDING',
+          total: orderData.total,
+          address: orderData.address,
+          phone: orderData.phone,
+          notes: orderData.notes || null,
+          paymentMethod: orderData.paymentMethod,
+          deliveryTime: orderData.deliveryTime || null,
+          items: {
+            create: orderData.items.map((item: any) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+          },
+        },
+        include: {
+          items: true,
+        },
+      })
+      
+      finalOrderId = newOrder.id
+      logger.info('Order created after successful payment', {
+        orderId: finalOrderId,
+        paymentID: callbackParams.paymentID,
+        amount: paymentDetails.Amount,
+        status: newOrder.status,
+      })
+    } else if (existingOrder) {
+      // Update existing order (backward compatibility)
+      finalOrderId = existingOrder.id
+      await prisma.order.update({
+        where: { id: finalOrderId },
+        data: {
+          status: isSuccessful ? 'CONFIRMED' : 'PENDING',
+          updatedAt: new Date(),
+        },
+      })
+      
+      logger.info('Order updated after successful payment', {
+        orderId: finalOrderId,
+        paymentID: callbackParams.paymentID,
+        amount: paymentDetails.Amount,
+      })
+    } else {
+      // Should not happen, but handle gracefully
+      logger.error('Cannot create or update order - no orderData and no existing order', {
         callbackParams,
         paymentDetails,
       })
       return NextResponse.redirect(
-        new URL('/order-success?error=order_not_found', request.url)
+        new URL('/order-success?error=order_creation_failed', request.url)
       )
     }
 
-    // Find order
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-    })
-
-    if (!order) {
-      logger.error('Order not found', { orderId })
-      return NextResponse.redirect(
-        new URL('/order-success?error=order_not_found', request.url)
-      )
-    }
-
-    // Check payment status
-    const isSuccessful = ameriaService.isPaymentSuccessful(paymentDetails)
-    const isApproved = ameriaService.isPaymentApproved(paymentDetails)
-    const isDeclined = ameriaService.isPaymentDeclined(paymentDetails)
-
-    // Update order status based on payment result
+    // Redirect to success page
     if (isSuccessful) {
-      // Payment completed successfully
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: 'CONFIRMED',
-          updatedAt: new Date(),
-        },
-      })
-
-      logger.info('Order payment successful', {
-        orderId,
-        paymentID: callbackParams.paymentID,
-        amount: paymentDetails.Amount,
-      })
-
-      // Redirect to success page
       return NextResponse.redirect(
-        new URL(`/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}`, request.url)
+        new URL(`/order-success?orderId=${finalOrderId}&paymentId=${callbackParams.paymentID}&clearCart=true`, request.url)
       )
     } else if (isApproved) {
       // Payment approved but not yet deposited (two-stage payment)
-      // You might want to handle this differently
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: 'CONFIRMED', // Or create a new status like 'PREAUTHORIZED'
-          updatedAt: new Date(),
-        },
-      })
-
-      logger.info('Order payment approved (preauthorized)', {
-        orderId,
-        paymentID: callbackParams.paymentID,
-      })
-
       return NextResponse.redirect(
-        new URL(`/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&status=approved`, request.url)
-      )
-    } else if (isDeclined) {
-      // Payment declined
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: 'CANCELLED',
-          updatedAt: new Date(),
-        },
-      })
-
-      logger.warn('Order payment declined', {
-        orderId,
-        paymentID: callbackParams.paymentID,
-        responseCode: paymentDetails.ResponseCode,
-        responseMessage: paymentDetails.TrxnDescription,
-      })
-
-      return NextResponse.redirect(
-        new URL(`/order-success?error=payment_declined&orderId=${orderId}&message=${encodeURIComponent(paymentDetails.TrxnDescription || 'Payment declined')}`, request.url)
+        new URL(`/order-success?orderId=${finalOrderId}&paymentId=${callbackParams.paymentID}&status=approved&clearCart=true`, request.url)
       )
     } else {
-      // Unknown status
-      logger.warn('Unknown payment status', {
-        orderId,
+      // Should not happen if responseCode = "00", but handle it
+      logger.warn('Payment responseCode is 00 but status check failed', {
+        orderId: finalOrderId,
         paymentID: callbackParams.paymentID,
         orderStatus: paymentDetails.OrderStatus,
         paymentState: paymentDetails.PaymentState,
-        responseCode: paymentDetails.ResponseCode,
       })
-
-      // Keep order as PENDING
+      
       return NextResponse.redirect(
-        new URL(`/order-success?error=unknown_status&orderId=${orderId}`, request.url)
+        new URL(`/order-success?orderId=${finalOrderId}&paymentId=${callbackParams.paymentID}&clearCart=true`, request.url)
       )
     }
   } catch (error) {
