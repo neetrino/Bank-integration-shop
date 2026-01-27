@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { AmeriaBankService, getPaymentUrl, CURRENCY_CODES } from '@/lib/payments/ameriabank'
+import { AmeriaBankService, getPaymentUrl, CURRENCY_CODES, getAmeriaBankCredentials } from '@/lib/payments/ameriabank'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 
@@ -16,12 +16,12 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     const body = await request.json()
-    const { orderId, orderData, amount, currency = 'AMD', description, backUrl } = body
+    const { orderId, amount, currency = 'AMD', description, backUrl } = body
 
     // Validate required fields
-    if (!amount) {
+    if (!orderId || !amount) {
       return NextResponse.json(
-        { error: 'Missing required field: amount is required' },
+        { error: 'Missing required fields: orderId and amount are required' },
         { status: 400 }
       )
     }
@@ -34,34 +34,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If orderId is provided, validate order exists (for backward compatibility)
-    // Otherwise, we expect orderData to create order after payment
-    let existingOrder = null
-    if (orderId) {
-      existingOrder = await prisma.order.findUnique({
-        where: { id: orderId },
-        include: { items: true },
-      })
+    // Validate order exists (order was created before payment initialization, like WordPress)
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    })
 
-      if (!existingOrder) {
-        return NextResponse.json(
-          { error: 'Order not found' },
-          { status: 404 }
-        )
-      }
-
-      // Check if order belongs to user (if authenticated)
-      if (session?.user?.id && existingOrder.userId && existingOrder.userId !== session.user.id) {
-        return NextResponse.json(
-          { error: 'Unauthorized: order does not belong to user' },
-          { status: 403 }
-        )
-      }
-    } else if (!orderData) {
+    if (!order) {
       return NextResponse.json(
-        { error: 'Missing required field: either orderId or orderData is required' },
-        { status: 400 }
+        { error: 'Order not found' },
+        { status: 404 }
       )
+    }
+
+    // Check if order belongs to user (if authenticated)
+    if (session?.user?.id && order.userId && order.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized: order does not belong to user' },
+        { status: 403 }
+      )
+    }
+
+    // Validate order amount matches
+    if (Math.abs(order.total - amount) > 0.01) {
+      logger.warn('Order amount mismatch', {
+        orderId,
+        orderTotal: order.total,
+        requestedAmount: amount,
+      })
     }
 
     // Get currency code
@@ -88,22 +88,22 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXTAUTH_URL || request.headers.get('origin') || 'http://localhost:3000'
     const callbackUrl = backUrl || `${baseUrl}/api/payments/ameriabank/callback`
 
-    // Prepare opaque data: if order exists, use orderId; otherwise encode orderData
-    let opaqueData: string
-    if (orderId) {
-      // Backward compatibility: use orderId
-      opaqueData = orderId
-    } else {
-      // Encode orderData as base64 JSON to pass through Opaque field
-      // Opaque field has limited length, so we'll use a more compact format
-      const orderDataWithSession = {
-        ...orderData,
-        userId: session?.user?.id || null,
-      }
-      opaqueData = Buffer.from(JSON.stringify(orderDataWithSession)).toString('base64')
+    // Validate credentials are set
+    const credentials = getAmeriaBankCredentials()
+    if (!credentials.clientID || !credentials.username || !credentials.password) {
+      logger.error('Ameria Bank credentials not configured', {
+        hasClientID: !!credentials.clientID,
+        hasUsername: !!credentials.username,
+        hasPassword: !!credentials.password,
+      })
+      return NextResponse.json(
+        { error: 'Payment gateway not configured. Please contact support.' },
+        { status: 500 }
+      )
     }
 
     // Initialize payment
+    // Pass only orderId in Opaque (like WordPress plugin does - short string, won't be truncated)
     const ameriaService = new AmeriaBankService()
     const initResponse = await ameriaService.initPayment({
       OrderID: bankOrderID,
@@ -111,15 +111,14 @@ export async function POST(request: NextRequest) {
       Currency: currencyCode,
       Description: paymentDescription,
       BackURL: callbackUrl,
-      Opaque: opaqueData, // Store order data in Opaque for callback
+      Opaque: orderId, // Store only order ID (short string, like WordPress plugin)
     })
 
     logger.info('Ameria Bank payment initialized', {
-      orderId: orderId || 'pending',
+      orderId,
       paymentID: initResponse.PaymentID,
       bankOrderID,
       amount,
-      hasOrderData: !!orderData,
     })
 
     // Get payment URL for redirect
@@ -137,10 +136,23 @@ export async function POST(request: NextRequest) {
     logger.error('Ameria Bank init payment error', error)
 
     const isDev = process.env.NODE_ENV === 'development'
+    
+    // Log detailed error information
+    if (error instanceof Error) {
+      logger.error('Error details', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      })
+    }
+
     return NextResponse.json(
       {
         error: 'Failed to initialize payment',
-        ...(isDev && error instanceof Error && { details: error.message }),
+        ...(isDev && error instanceof Error && { 
+          details: error.message,
+          stack: error.stack 
+        }),
       },
       { status: 500 }
     )

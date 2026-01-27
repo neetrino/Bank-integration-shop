@@ -62,20 +62,21 @@ model Product {
 }
 
 model Order {
-  id            String      @id @default(cuid())
+  id            String         @id @default(cuid())
   userId        String?
-  status        OrderStatus @default(PENDING)
+  status        OrderStatus    @default(PENDING)
   total         Float
   address       String
   phone         String
   notes         String?
   paymentMethod String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   deliveryTime  String?
-  name          String      @default("Unknown Customer")
+  name          String         @default("Unknown Customer")
+  paymentStatus PaymentStatus?
   items         OrderItem[]
-  user          User?       @relation(fields: [userId], references: [id])
+  user          User?          @relation(fields: [userId], references: [id])
 
   @@map("orders")
 }
@@ -148,4 +149,12 @@ enum ProductStatus {
   NEW
   CLASSIC
   BANNER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  CANCELLED
 }

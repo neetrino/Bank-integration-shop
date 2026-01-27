@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { AmeriaBankService, PaymentCallbackParams, OrderStatus } from '@/lib/payments/ameriabank'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import { PaymentStatus } from '@prisma/client'
 import { redirect } from 'next/navigation'
 
 export async function GET(request: NextRequest) {
@@ -75,48 +76,32 @@ export async function GET(request: NextRequest) {
       paymentState: paymentDetails.PaymentState,
     })
 
-    // Parse Opaque data - can be either orderId (string) or base64-encoded orderData (JSON)
+    // Parse Opaque data - should be orderId (like WordPress plugin)
+    // WordPress plugin passes only order_id in Opaque field
     let orderId: string | null = null
-    let orderData: any = null
-    let existingOrder = null
 
     if (callbackParams.opaque) {
-      try {
-        // Try to decode as base64 JSON (new format with orderData)
-        const decoded = Buffer.from(callbackParams.opaque, 'base64').toString('utf-8')
-        const parsed = JSON.parse(decoded)
-        
-        // If it's an object with orderData structure, use it
-        if (parsed && typeof parsed === 'object' && parsed.items) {
-          orderData = parsed
-          logger.info('Decoded orderData from Opaque', {
-            hasItems: !!orderData.items,
-            userId: orderData.userId,
-          })
-        } else {
-          // Otherwise treat as orderId (backward compatibility)
-          orderId = callbackParams.opaque
-        }
-      } catch (e) {
-        // Not base64 JSON, treat as plain orderId (backward compatibility)
-        orderId = callbackParams.opaque
-      }
+      // Opaque should contain order ID (short string, like WordPress plugin)
+      orderId = callbackParams.opaque
     }
 
-    // If we have orderId, try to find existing order (backward compatibility)
-    if (orderId) {
-      existingOrder = await prisma.order.findUnique({
-        where: { id: orderId },
-      })
-    }
-
-    // If no orderData and no existing order, we can't proceed
-    if (!orderData && !existingOrder) {
-      logger.error('Cannot identify order from callback - no orderData and no existing order', {
+    if (!orderId) {
+      logger.error('Cannot identify order from callback - no Opaque parameter', {
         callbackParams,
         paymentDetails,
-        hasOpaque: !!callbackParams.opaque,
       })
+      return NextResponse.redirect(
+        new URL('/order-success?error=order_not_found', request.url)
+      )
+    }
+
+    // Find existing order (order was created before payment initialization, like WordPress)
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+    })
+
+    if (!order) {
+      logger.error('Order not found', { orderId })
       return NextResponse.redirect(
         new URL('/order-success?error=order_not_found', request.url)
       )
@@ -177,21 +162,27 @@ export async function GET(request: NextRequest) {
       }
       
       logger.warn('Payment failed based on callback response code', {
-        orderId: orderId || 'pending',
+        orderId,
         paymentID: callbackParams.paymentID,
         responseCode: callbackResponseCode,
         orderStatus: paymentDetails.OrderStatus,
         paymentState: paymentDetails.PaymentState,
         errorMessage,
         trxnDescription: paymentDetails.TrxnDescription,
-        hasOrderData: !!orderData,
       })
       
-      // Payment failed - DON'T create order, just show error
-      // If order already exists (backward compatibility), don't update it
-      const errorOrderId = existingOrder?.id || null
+      // Payment failed - update order status to CANCELLED and payment status to FAILED
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'CANCELLED',
+          paymentStatus: PaymentStatus.FAILED,
+          updatedAt: new Date(),
+        },
+      })
+      
       return NextResponse.redirect(
-        new URL(`/order-success?error=payment_failed${errorOrderId ? `&orderId=${errorOrderId}` : ''}&message=${encodeURIComponent(errorMessage)}&paymentId=${callbackParams.paymentID}&responseCode=${responseCode}`, request.url)
+        new URL(`/order-success?error=payment_failed&orderId=${orderId}&message=${encodeURIComponent(errorMessage)}&paymentId=${callbackParams.paymentID}&responseCode=${responseCode}`, request.url)
       )
     }
     
@@ -200,89 +191,58 @@ export async function GET(request: NextRequest) {
     const isSuccessful = ameriaService.isPaymentSuccessful(paymentDetails)
     const isApproved = ameriaService.isPaymentApproved(paymentDetails)
 
-    // Create order if it doesn't exist (new flow)
-    let finalOrderId: string
-    if (!existingOrder && orderData) {
-      // Create order from orderData
-      const newOrder = await prisma.order.create({
-        data: {
-          userId: orderData.userId || null,
-          name: orderData.name || 'Guest Customer',
-          status: isSuccessful ? 'CONFIRMED' : 'PENDING',
-          total: orderData.total,
-          address: orderData.address,
-          phone: orderData.phone,
-          notes: orderData.notes || null,
-          paymentMethod: orderData.paymentMethod,
-          deliveryTime: orderData.deliveryTime || null,
-          items: {
-            create: orderData.items.map((item: any) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-              price: item.price,
-            })),
-          },
-        },
-        include: {
-          items: true,
-        },
-      })
-      
-      finalOrderId = newOrder.id
-      logger.info('Order created after successful payment', {
-        orderId: finalOrderId,
-        paymentID: callbackParams.paymentID,
-        amount: paymentDetails.Amount,
-        status: newOrder.status,
-      })
-    } else if (existingOrder) {
-      // Update existing order (backward compatibility)
-      finalOrderId = existingOrder.id
+    // Update existing order status (order was created before payment, like WordPress plugin)
+    if (isSuccessful) {
+      // Payment completed successfully - update order to CONFIRMED and payment status to SUCCESS
       await prisma.order.update({
-        where: { id: finalOrderId },
+        where: { id: orderId },
         data: {
-          status: isSuccessful ? 'CONFIRMED' : 'PENDING',
+          status: 'CONFIRMED',
+          paymentStatus: PaymentStatus.SUCCESS,
           updatedAt: new Date(),
         },
       })
-      
-      logger.info('Order updated after successful payment', {
-        orderId: finalOrderId,
+
+      logger.info('Order payment successful', {
+        orderId,
         paymentID: callbackParams.paymentID,
         amount: paymentDetails.Amount,
       })
-    } else {
-      // Should not happen, but handle gracefully
-      logger.error('Cannot create or update order - no orderData and no existing order', {
-        callbackParams,
-        paymentDetails,
-      })
-      return NextResponse.redirect(
-        new URL('/order-success?error=order_creation_failed', request.url)
-      )
-    }
 
-    // Redirect to success page
-    if (isSuccessful) {
       return NextResponse.redirect(
-        new URL(`/order-success?orderId=${finalOrderId}&paymentId=${callbackParams.paymentID}&clearCart=true`, request.url)
+        new URL(`/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&clearCart=true`, request.url)
       )
     } else if (isApproved) {
       // Payment approved but not yet deposited (two-stage payment)
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'CONFIRMED', // Or keep PENDING if you want to wait for confirmation
+          paymentStatus: PaymentStatus.PENDING, // Preauthorized, waiting for confirmation
+          updatedAt: new Date(),
+        },
+      })
+
+      logger.info('Order payment approved (preauthorized)', {
+        orderId,
+        paymentID: callbackParams.paymentID,
+      })
+
       return NextResponse.redirect(
-        new URL(`/order-success?orderId=${finalOrderId}&paymentId=${callbackParams.paymentID}&status=approved&clearCart=true`, request.url)
+        new URL(`/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&status=approved&clearCart=true`, request.url)
       )
     } else {
       // Should not happen if responseCode = "00", but handle it
       logger.warn('Payment responseCode is 00 but status check failed', {
-        orderId: finalOrderId,
+        orderId,
         paymentID: callbackParams.paymentID,
         orderStatus: paymentDetails.OrderStatus,
         paymentState: paymentDetails.PaymentState,
       })
       
+      // Keep order as PENDING
       return NextResponse.redirect(
-        new URL(`/order-success?orderId=${finalOrderId}&paymentId=${callbackParams.paymentID}&clearCart=true`, request.url)
+        new URL(`/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&clearCart=true`, request.url)
       )
     }
   } catch (error) {

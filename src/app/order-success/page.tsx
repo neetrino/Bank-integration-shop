@@ -3,31 +3,71 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { CheckCircle, Clock, Phone, ArrowRight, XCircle, AlertCircle } from 'lucide-react'
+import { CheckCircle, Clock, Phone, ArrowRight, XCircle, AlertCircle, Package, Truck } from 'lucide-react'
 import Footer from '@/components/Footer'
 import { useCart } from '@/hooks/useCart'
+import { useSession } from 'next-auth/react'
+
+interface Order {
+  id: string
+  status: string
+  total: number
+  createdAt: string
+}
 
 export default function OrderSuccessPage() {
   const searchParams = useSearchParams()
   const { clearCart } = useCart()
+  const { data: session } = useSession()
   const [mounted, setMounted] = useState(false)
+  const [order, setOrder] = useState<Order | null>(null)
+  const [loadingOrder, setLoadingOrder] = useState(false)
+  const [cartCleared, setCartCleared] = useState(false)
   
   useEffect(() => {
     setMounted(true)
   }, [])
   
-  // Clear cart only after successful payment (when clearCart=true and no error)
+  // Load order details if orderId is provided
   useEffect(() => {
-    if (mounted) {
+    const orderId = searchParams.get('orderId')
+    if (mounted && orderId && session) {
+      loadOrder(orderId)
+    }
+  }, [mounted, searchParams, session])
+  
+  const loadOrder = async (orderId: string) => {
+    try {
+      setLoadingOrder(true)
+      const response = await fetch('/api/orders')
+      if (response.ok) {
+        const orders = await response.json()
+        const foundOrder = orders.find((o: Order) => o.id === orderId)
+        if (foundOrder) {
+          setOrder(foundOrder)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading order:', error)
+    } finally {
+      setLoadingOrder(false)
+    }
+  }
+  
+  // Clear cart only after successful payment (when clearCart=true and no error)
+  // Use cartCleared flag to prevent infinite loop
+  useEffect(() => {
+    if (mounted && !cartCleared) {
       const error = searchParams.get('error')
       const clearCartParam = searchParams.get('clearCart')
       
       // Clear cart only if payment was successful (no error and clearCart=true)
       if (!error && clearCartParam === 'true') {
         clearCart()
+        setCartCleared(true) // Mark as cleared to prevent re-execution
       }
     }
-  }, [mounted, searchParams, clearCart])
+  }, [mounted, searchParams, cartCleared]) // Remove clearCart from dependencies
   
   if (!mounted) {
     return null
@@ -41,6 +81,43 @@ export default function OrderSuccessPage() {
   
   const hasError = !!error
   const errorMessage = message ? decodeURIComponent(message) : 'Произошла ошибка при обработке платежа'
+  
+  // Get status info (same as in profile page)
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return { text: 'Սպասում է հաստատման', color: 'text-yellow-600', bg: 'bg-yellow-100' }
+      case 'CONFIRMED':
+        return { text: 'Հաստատված', color: 'text-blue-600', bg: 'bg-blue-100' }
+      case 'PREPARING':
+        return { text: 'Պատրաստվում է', color: 'text-orange-600', bg: 'bg-orange-100' }
+      case 'READY':
+        return { text: 'Պատրաստ է հանձնման', color: 'text-purple-600', bg: 'bg-purple-100' }
+      case 'DELIVERED':
+        return { text: 'Առաքված', color: 'text-green-600', bg: 'bg-green-100' }
+      case 'CANCELLED':
+        return { text: 'Չեղարկված', color: 'text-red-600', bg: 'bg-red-100' }
+      default:
+        return { text: status, color: 'text-gray-600', bg: 'bg-gray-100' }
+    }
+  }
+  
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return <Clock className="h-5 w-5" />
+      case 'CONFIRMED':
+      case 'PREPARING':
+      case 'READY':
+        return <Package className="h-5 w-5" />
+      case 'DELIVERED':
+        return <Truck className="h-5 w-5" />
+      case 'CANCELLED':
+        return <XCircle className="h-5 w-5" />
+      default:
+        return <Clock className="h-5 w-5" />
+    }
+  }
   
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
@@ -114,6 +191,64 @@ export default function OrderSuccessPage() {
               <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
                 Спасибо за ваш заказ! Мы получили вашу заявку и скоро свяжемся с вами для подтверждения.
               </p>
+              
+              {/* Order Status Info */}
+              {order && (
+                <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 max-w-2xl mx-auto">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Номер заказа</p>
+                      <p className="text-lg font-semibold text-gray-900">#{order.id.slice(-8)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600 mb-1">Статус заказа</p>
+                      {(() => {
+                        const statusInfo = getStatusInfo(order.status)
+                        return (
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${statusInfo.bg} ${statusInfo.color}`}>
+                            {getStatusIcon(order.status)}
+                            <span className="ml-2">{statusInfo.text}</span>
+                          </span>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                  <div className="pt-4 border-t border-gray-200">
+                    <p className="text-sm text-gray-600 mb-1">Сумма заказа</p>
+                    <p className="text-2xl font-bold text-orange-600">{order.total.toLocaleString()} ֏</p>
+                  </div>
+                  {session && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <Link 
+                        href="/profile"
+                        className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium text-sm"
+                      >
+                        Посмотреть все заказы в профиле
+                        <ArrowRight className="h-4 w-4 ml-1" />
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Order ID if no order loaded but orderId in URL */}
+              {!order && orderId && (
+                <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 max-w-2xl mx-auto">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600 mb-2">Номер заказа</p>
+                    <p className="text-xl font-semibold text-gray-900">#{orderId.slice(-8)}</p>
+                    {session && (
+                      <Link 
+                        href="/profile"
+                        className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium text-sm mt-4"
+                      >
+                        Посмотреть заказ в профиле
+                        <ArrowRight className="h-4 w-4 ml-1" />
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
             </>
           )}
           
@@ -182,13 +317,23 @@ export default function OrderSuccessPage() {
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Link>
             ) : (
-              <Link 
-                href="/products"
-                className="inline-flex items-center bg-orange-500 text-white px-8 py-4 rounded-xl font-semibold hover:bg-orange-600 transition-colors text-lg"
-              >
-                Заказать еще
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Link>
+              <>
+                <Link 
+                  href="/products"
+                  className="inline-flex items-center bg-orange-500 text-white px-8 py-4 rounded-xl font-semibold hover:bg-orange-600 transition-colors text-lg"
+                >
+                  Заказать еще
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </Link>
+                {session && (
+                  <Link 
+                    href="/profile"
+                    className="inline-flex items-center border-2 border-orange-500 text-orange-500 px-8 py-4 rounded-xl font-semibold hover:bg-orange-500 hover:text-white transition-colors text-lg"
+                  >
+                    Мои заказы
+                  </Link>
+                )}
+              </>
             )}
             
             <Link 

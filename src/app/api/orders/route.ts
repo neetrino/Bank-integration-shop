@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
-import { PrismaClient } from '@prisma/client'
+import { PaymentStatus } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
-
-const prisma = new PrismaClient()
 
 export async function GET(request: NextRequest) {
   try {
@@ -92,12 +91,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Determine payment status based on payment method
+    // For bank payments, status is PENDING until payment is confirmed
+    // For cash/card on delivery, payment status is null (not applicable)
+    const paymentStatus: PaymentStatus | null = paymentMethod === 'ameriabank' ? PaymentStatus.PENDING : null
+
     // Create order (supports both authenticated and guest users)
     const order = await prisma.order.create({
       data: {
         userId: session?.user?.id || null, // null for guest orders
         name: name || 'Guest Customer',
         status: 'PENDING',
+        paymentStatus,
         total,
         address,
         phone,

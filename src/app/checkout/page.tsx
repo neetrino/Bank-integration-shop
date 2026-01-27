@@ -172,51 +172,9 @@ export default function CheckoutPage() {
         total
       }
 
-      // Handle payment based on payment method
-      if (formData.paymentMethod === 'ameriabank') {
-        // For bank payment: DON'T create order yet, initialize payment first
-        // Order will be created only after successful payment in callback
-        try {
-          const paymentResponse = await fetch('/api/payments/ameriabank/init', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              orderData: orderData, // Pass order data to create after payment
-              amount: total,
-              currency: 'AMD',
-              description: `Order payment`,
-            }),
-          })
-
-          if (!paymentResponse.ok) {
-            const errorData = await paymentResponse.json().catch(() => ({}))
-            const errorMessage = errorData.error || paymentResponse.statusText || 'Неизвестная ошибка'
-            
-            alert(`Ошибка при инициализации платежа: ${errorMessage}\n\nПопробуйте еще раз или выберите другой способ оплаты.`)
-            setIsSubmitting(false)
-            return
-          }
-
-          const paymentData = await paymentResponse.json()
-          
-          // DON'T clear cart yet - will be cleared only after successful payment
-          // DON'T create order yet - will be created in callback after successful payment
-          
-          // Redirect to bank payment page (не сбрасываем isSubmitting, чтобы предотвратить повторную отправку)
-          window.location.href = paymentData.paymentUrl
-          return
-        } catch (paymentError) {
-          console.error('Payment initialization error:', paymentError)
-          const errorMessage = paymentError instanceof Error ? paymentError.message : 'Неизвестная ошибка'
-          alert(`Ошибка при инициализации платежа: ${errorMessage}\n\nПопробуйте еще раз или выберите другой способ оплаты.`)
-          setIsSubmitting(false)
-          return
-        }
-      }
-      
-      // For cash/card payments: create order immediately
+      // Create order FIRST (like WordPress plugin does)
+      // For bank payments: order will be created with PENDING status
+      // For cash/card: order will be created with PENDING status and confirmed immediately
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -238,6 +196,50 @@ export default function CheckoutPage() {
       const order = await response.json()
       console.log('Order created successfully:', order.id)
       
+      // Handle payment based on payment method
+      if (formData.paymentMethod === 'ameriabank') {
+        // For bank payment: initialize payment with order ID
+        try {
+          const paymentResponse = await fetch('/api/payments/ameriabank/init', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              orderId: order.id, // Pass only order ID (short string, like WordPress)
+              amount: total,
+              currency: 'AMD',
+              description: `Order #${order.id}`,
+            }),
+          })
+
+          if (!paymentResponse.ok) {
+            const errorData = await paymentResponse.json().catch(() => ({}))
+            const errorMessage = errorData.error || paymentResponse.statusText || 'Неизвестная ошибка'
+            
+            alert(`Ошибка при инициализации платежа: ${errorMessage}\n\nПопробуйте еще раз или выберите другой способ оплаты.`)
+            setIsSubmitting(false)
+            return
+          }
+
+          const paymentData = await paymentResponse.json()
+          
+          // Clear cart before redirecting (like WordPress plugin does)
+          clearCart()
+          
+          // Redirect to bank payment page (не сбрасываем isSubmitting, чтобы предотвратить повторную отправку)
+          window.location.href = paymentData.paymentUrl
+          return
+        } catch (paymentError) {
+          console.error('Payment initialization error:', paymentError)
+          const errorMessage = paymentError instanceof Error ? paymentError.message : 'Неизвестная ошибка'
+          alert(`Ошибка при инициализации платежа: ${errorMessage}\n\nПопробуйте еще раз или выберите другой способ оплаты.`)
+          setIsSubmitting(false)
+          return
+        }
+      }
+      
+      // For cash/card payments: order already created, just redirect to success
       // Clear cart after successful order creation
       clearCart()
       

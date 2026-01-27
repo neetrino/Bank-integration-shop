@@ -90,6 +90,23 @@ const statusLabels = {
   CANCELLED: 'Отменен'
 }
 
+// Payment Status Colors and Labels
+const paymentStatusColors = {
+  PENDING: 'bg-yellow-100 text-yellow-800',
+  SUCCESS: 'bg-green-100 text-green-800',
+  FAILED: 'bg-red-100 text-red-800',
+  REFUNDED: 'bg-purple-100 text-purple-800',
+  CANCELLED: 'bg-gray-100 text-gray-800'
+}
+
+const paymentStatusLabels = {
+  PENDING: 'Ожидает оплаты',
+  SUCCESS: 'Оплачено',
+  FAILED: 'Ошибка оплаты',
+  REFUNDED: 'Возврат',
+  CANCELLED: 'Отменено'
+}
+
 export default function AdminOrdersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -98,6 +115,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -225,19 +243,41 @@ export default function AdminOrdersPage() {
     }
   }
 
-  // Фильтруем заказы по поисковому запросу
+  // Получаем иконку для статуса платежа
+  const getPaymentStatusIcon = (paymentStatus: string | null | undefined) => {
+    if (!paymentStatus) return null
+    switch (paymentStatus) {
+      case 'PENDING': return <Clock className="h-4 w-4" />
+      case 'SUCCESS': return <CheckCircle className="h-4 w-4" />
+      case 'FAILED': return <X className="h-4 w-4" />
+      case 'REFUNDED': return <RefreshCw className="h-4 w-4" />
+      case 'CANCELLED': return <X className="h-4 w-4" />
+      default: return <AlertCircle className="h-4 w-4" />
+    }
+  }
+
+  // Фильтруем заказы по поисковому запросу и статусу платежа
   const filteredOrders = orders.filter(order => {
-    if (!searchTerm) return true
+    // Поиск
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      const matchesSearch = (
+        (order.user?.name?.toLowerCase().includes(searchLower)) ||
+        (order.user?.email?.toLowerCase().includes(searchLower)) ||
+        (order.user?.phone?.toLowerCase().includes(searchLower)) ||
+        order.name.toLowerCase().includes(searchLower) ||
+        order.phone.toLowerCase().includes(searchLower) ||
+        order.id.toLowerCase().includes(searchLower)
+      )
+      if (!matchesSearch) return false
+    }
     
-    const searchLower = searchTerm.toLowerCase()
-    return (
-      (order.user?.name?.toLowerCase().includes(searchLower)) ||
-      (order.user?.email?.toLowerCase().includes(searchLower)) ||
-      (order.user?.phone?.toLowerCase().includes(searchLower)) ||
-      order.name.toLowerCase().includes(searchLower) ||
-      order.phone.toLowerCase().includes(searchLower) ||
-      order.id.toLowerCase().includes(searchLower)
-    )
+    // Фильтр по статусу платежа
+    if (paymentStatusFilter) {
+      if (!order.paymentStatus || order.paymentStatus !== paymentStatusFilter) return false
+    }
+    
+    return true
   })
 
   if (status === 'loading' || loading) {
@@ -346,7 +386,7 @@ export default function AdminOrdersPage() {
 
         {/* Filters */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Search className="inline h-4 w-4 mr-1" />
@@ -364,7 +404,7 @@ export default function AdminOrdersPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Filter className="inline h-4 w-4 mr-1" />
-                Статус
+                Статус заказа
               </label>
               <select
                 value={statusFilter}
@@ -378,6 +418,25 @@ export default function AdminOrdersPage() {
                 <option value="READY">Готов</option>
                 <option value="DELIVERED">Доставлен</option>
                 <option value="CANCELLED">Отменен</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <CreditCard className="inline h-4 w-4 mr-1" />
+                Статус платежа
+              </label>
+              <select
+                value={paymentStatusFilter}
+                onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                className="w-full px-4 py-3 bg-white border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-gray-900 font-medium"
+              >
+                <option value="">Все статусы</option>
+                <option value="PENDING">Ожидает оплаты</option>
+                <option value="SUCCESS">Оплачено</option>
+                <option value="FAILED">Ошибка оплаты</option>
+                <option value="REFUNDED">Возврат</option>
+                <option value="CANCELLED">Отменено</option>
               </select>
             </div>
           </div>
@@ -471,6 +530,14 @@ export default function AdminOrdersPage() {
                         Детали
                       </Button>
                       
+                      {/* Статус платежа (если есть) */}
+                      {order.paymentStatus && (
+                        <div className={`px-3 py-2 rounded-xl ${paymentStatusColors[order.paymentStatus as keyof typeof paymentStatusColors]} flex items-center gap-2 font-medium text-sm`}>
+                          {getPaymentStatusIcon(order.paymentStatus)}
+                          <span>{paymentStatusLabels[order.paymentStatus as keyof typeof paymentStatusLabels]}</span>
+                        </div>
+                      )}
+                      
                       {/* Объединенный статус и смена статуса */}
                       <div className="relative">
                         <select
@@ -554,7 +621,7 @@ export default function AdminOrdersPage() {
                   <div className={`${statusBackgroundColors[selectedOrder.status]} ${statusBorderColors[selectedOrder.status]} border rounded-2xl p-4`}>
                     <div className="flex items-center gap-2 mb-3">
                       {getStatusIcon(selectedOrder.status)}
-                      <span className="font-medium text-gray-900">Статус</span>
+                      <span className="font-medium text-gray-900">Статус заказа</span>
                     </div>
                     <select
                       value={selectedOrder.status}
@@ -569,6 +636,19 @@ export default function AdminOrdersPage() {
                       <option value="CANCELLED">❌ Отменен</option>
                     </select>
                   </div>
+
+                  {/* Статус платежа */}
+                  {selectedOrder.paymentStatus && (
+                    <div className={`${paymentStatusColors[selectedOrder.paymentStatus as keyof typeof paymentStatusColors]} border rounded-2xl p-4`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        {getPaymentStatusIcon(selectedOrder.paymentStatus)}
+                        <span className="font-medium text-gray-900">Статус платежа</span>
+                      </div>
+                      <div className={`px-3 py-2 bg-white rounded-xl border-2 border-gray-300 text-center font-medium ${paymentStatusColors[selectedOrder.paymentStatus as keyof typeof paymentStatusColors]}`}>
+                        {paymentStatusLabels[selectedOrder.paymentStatus as keyof typeof paymentStatusLabels]}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="bg-blue-50 rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
