@@ -193,12 +193,13 @@ export async function GET(request: NextRequest) {
 
     // Update existing order status (order was created before payment, like WordPress plugin)
     if (isSuccessful) {
-      // Payment completed successfully - update order to CONFIRMED and payment status to SUCCESS
+      // Payment completed successfully - update order to CONFIRMED and save bank PaymentID for refund/cancel
       await prisma.order.update({
         where: { id: orderId },
         data: {
           status: 'CONFIRMED',
           paymentStatus: PaymentStatus.SUCCESS,
+          paymentTransactionId: callbackParams.paymentID,
           updatedAt: new Date(),
         },
       })
@@ -217,8 +218,9 @@ export async function GET(request: NextRequest) {
       await prisma.order.update({
         where: { id: orderId },
         data: {
-          status: 'CONFIRMED', // Or keep PENDING if you want to wait for confirmation
-          paymentStatus: PaymentStatus.PENDING, // Preauthorized, waiting for confirmation
+          status: 'CONFIRMED',
+          paymentStatus: PaymentStatus.PENDING,
+          paymentTransactionId: callbackParams.paymentID,
           updatedAt: new Date(),
         },
       })

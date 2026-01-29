@@ -119,6 +119,8 @@ export default function AdminOrdersPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [paymentActionLoading, setPaymentActionLoading] = useState<'refund' | 'cancel' | 'payment-status' | null>(null)
+  const [paymentActionError, setPaymentActionError] = useState<string | null>(null)
   const [stats, setStats] = useState({
     totalOrders: 0,
     pendingOrders: 0,
@@ -193,6 +195,34 @@ export default function AdminOrdersPage() {
   const closeModal = () => {
     setShowModal(false)
     setSelectedOrder(null)
+    setPaymentActionError(null)
+  }
+
+  // Изменяем статус оплаты (вручную или через банк: при выборе «Возврат»/«Отмена» — запрос в банк)
+  const updatePaymentStatus = async (orderId: string, newStatus: string) => {
+    setPaymentActionError(null)
+    const loadingKey = newStatus === 'REFUNDED' ? 'refund' : newStatus === 'CANCELLED' ? 'cancel' : 'payment-status'
+    setPaymentActionLoading(loadingKey)
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/payment-status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentStatus: newStatus })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.error || 'Не удалось изменить статус оплаты')
+      }
+      const updated = data as OrderWithDetails
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, paymentStatus: updated.paymentStatus } : o))
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(prev => prev ? { ...prev, paymentStatus: updated.paymentStatus } : null)
+      }
+    } catch (e) {
+      setPaymentActionError(e instanceof Error ? e.message : 'Ошибка')
+    } finally {
+      setPaymentActionLoading(null)
+    }
   }
 
   useEffect(() => {
@@ -442,6 +472,15 @@ export default function AdminOrdersPage() {
           </div>
         </div>
 
+        {paymentActionError && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm flex items-center justify-between">
+            <span>{paymentActionError}</span>
+            <button type="button" onClick={() => setPaymentActionError(null)} className="text-red-500 hover:text-red-700 ml-2">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* Orders List */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="p-6 border-b border-gray-300">
@@ -530,15 +569,27 @@ export default function AdminOrdersPage() {
                         Детали
                       </Button>
                       
-                      {/* Статус платежа (если есть) */}
-                      {order.paymentStatus && (
-                        <div className={`px-3 py-2 rounded-xl ${paymentStatusColors[order.paymentStatus as keyof typeof paymentStatusColors]} flex items-center gap-2 font-medium text-sm`}>
-                          {getPaymentStatusIcon(order.paymentStatus)}
-                          <span>{paymentStatusLabels[order.paymentStatus as keyof typeof paymentStatusLabels]}</span>
+                      {/* Статус платежа — переключатель (как у статуса заказа) */}
+                      <div className="relative">
+                        <select
+                          value={order.paymentStatus ?? 'PENDING'}
+                          onChange={(e) => updatePaymentStatus(order.id, e.target.value)}
+                          className={`px-4 py-2 rounded-xl border-0 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors cursor-pointer appearance-none pr-10 ${paymentStatusColors[(order.paymentStatus ?? 'PENDING') as keyof typeof paymentStatusColors]} font-medium text-sm`}
+                        >
+                          <option value="PENDING">⏳ Ожидает оплаты</option>
+                          <option value="SUCCESS">✅ Оплачено</option>
+                          <option value="FAILED">❌ Ошибка оплаты</option>
+                          <option value="REFUNDED">↩️ Возврат</option>
+                          <option value="CANCELLED">🚫 Отменено</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
                         </div>
-                      )}
-                      
-                      {/* Объединенный статус и смена статуса */}
+                      </div>
+
+                      {/* Статус заказа — переключатель */}
                       <div className="relative">
                         <select
                           value={order.status}
@@ -637,18 +688,34 @@ export default function AdminOrdersPage() {
                     </select>
                   </div>
 
-                  {/* Статус платежа */}
-                  {selectedOrder.paymentStatus && (
-                    <div className={`${paymentStatusColors[selectedOrder.paymentStatus as keyof typeof paymentStatusColors]} border rounded-2xl p-4`}>
-                      <div className="flex items-center gap-2 mb-3">
-                        {getPaymentStatusIcon(selectedOrder.paymentStatus)}
-                        <span className="font-medium text-gray-900">Статус платежа</span>
-                      </div>
-                      <div className={`px-3 py-2 bg-white rounded-xl border-2 border-gray-300 text-center font-medium ${paymentStatusColors[selectedOrder.paymentStatus as keyof typeof paymentStatusColors]}`}>
-                        {paymentStatusLabels[selectedOrder.paymentStatus as keyof typeof paymentStatusLabels]}
-                      </div>
+                  {/* Статус платежа — переключатель (вручную или через банк: Возврат/Отмена = запрос в банк) */}
+                  <div className={`${paymentStatusColors[(selectedOrder.paymentStatus ?? 'PENDING') as keyof typeof paymentStatusColors]} border rounded-2xl p-4`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      {getPaymentStatusIcon(selectedOrder.paymentStatus ?? 'PENDING')}
+                      <span className="font-medium text-gray-900">Статус платежа</span>
                     </div>
-                  )}
+                    <select
+                      value={selectedOrder.paymentStatus ?? 'PENDING'}
+                      onChange={(e) => updatePaymentStatus(selectedOrder.id, e.target.value)}
+                      disabled={!!paymentActionLoading}
+                      className={`w-full px-3 py-2 bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-gray-900 font-medium disabled:opacity-50`}
+                    >
+                      <option value="PENDING">⏳ Ожидает оплаты</option>
+                      <option value="SUCCESS">✅ Оплачено</option>
+                      <option value="FAILED">❌ Ошибка оплаты</option>
+                      <option value="REFUNDED">↩️ Возврат</option>
+                      <option value="CANCELLED">🚫 Отменено</option>
+                    </select>
+                    {(paymentActionLoading === 'refund' || paymentActionLoading === 'cancel') && (
+                      <p className="text-xs text-orange-600 mt-2 flex items-center gap-1">
+                        <RefreshCw className="h-3 w-3 animate-spin" />
+                        Идёт запрос в банк…
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-600 mt-2">
+                      Можно менять вручную (напр. «Оплачено» — если клиент оплатил наличными/переводом). При выборе «Возврат» или «Отменено» для Ameria отправляется запрос в банк.
+                    </p>
+                  </div>
 
                   <div className="bg-blue-50 rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
@@ -671,6 +738,27 @@ export default function AdminOrdersPage() {
                     <div className="text-sm font-medium text-gray-700">{selectedOrder.paymentMethod}</div>
                   </div>
                 </div>
+
+                {/* ID транзакции банка (для справки; возврат/отмена — через переключатель статуса оплаты выше) */}
+                {selectedOrder.paymentTransactionId ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CreditCard className="h-4 w-4 text-orange-500" />
+                      <span className="font-medium text-gray-900">Платёж банка</span>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      ID транзакции: <span className="font-mono font-medium text-gray-900">{selectedOrder.paymentTransactionId}</span>
+                    </div>
+                    {selectedOrder.paymentMethod?.toLowerCase() === 'idram' && (
+                      <p className="text-sm text-amber-700 bg-amber-50 rounded-xl px-3 py-2 mt-2">
+                        Возврат и отмена по IDram — через поддержку IDram (укажите ID транзакции выше).
+                      </p>
+                    )}
+                    {paymentActionError && (
+                      <p className="mt-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{paymentActionError}</p>
+                    )}
+                  </div>
+                ) : null}
 
                 {/* Информация о клиенте и доставке */}
                 <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">

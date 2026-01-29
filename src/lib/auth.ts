@@ -76,7 +76,7 @@ export const authOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production', // HTTPS only в проде
+        secure: process.env.NODE_ENV === 'production',
       },
     },
   },

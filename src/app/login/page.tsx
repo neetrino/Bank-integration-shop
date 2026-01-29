@@ -1,12 +1,31 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
 import Footer from '@/components/Footer'
 
+function getSafeRedirect(callbackUrl: string | null): string {
+  if (!callbackUrl) return '/'
+  try {
+    if (callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')) {
+      return callbackUrl
+    }
+    const url = new URL(callbackUrl)
+    if (typeof window !== 'undefined' && url.origin === window.location.origin) {
+      return url.pathname + url.search
+    }
+    return url.pathname.startsWith('/') ? url.pathname : '/'
+  } catch {
+    return '/'
+  }
+}
+
 export default function LoginPage() {
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -28,8 +47,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Սխալ email կամ գաղտնաբառ')
       } else {
-        // Перенаправляем на главную страницу
-        window.location.href = '/'
+        window.location.href = getSafeRedirect(callbackUrl)
       }
     } catch (error) {
       setError('Մուտք գործելիս սխալ է տեղի ունեցել')

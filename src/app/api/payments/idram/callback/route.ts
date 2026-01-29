@@ -141,6 +141,7 @@ export async function POST(request: NextRequest) {
       data: {
         status: 'CONFIRMED',
         paymentStatus: PaymentStatus.SUCCESS,
+        paymentTransactionId: transId, // IDram EDP_TRANS_ID (for reference; refund via Idram support)
         updatedAt: new Date(),
       },
     })
