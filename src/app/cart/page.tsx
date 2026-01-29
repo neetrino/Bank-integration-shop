@@ -329,10 +329,6 @@ export default function CartPage() {
                   <span>Արտադրանք ({items.reduce((total, item) => total + item.quantity, 0)} հատ)</span>
                   <span>{formatPrice(getTotalPrice())} ֏</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Առաքում</span>
-                  <span className="text-green-600 font-semibold">Անվճար</span>
-                </div>
                 <div className="border-t border-gray-300 pt-4">
                   <div className="flex justify-between text-xl font-bold text-gray-900">
                     <span>Վճարման</span>
@@ -373,10 +369,6 @@ export default function CartPage() {
               <div className="flex justify-between text-gray-600">
                 <span>Արտադրանք ({items.reduce((total, item) => total + item.quantity, 0)} հատ)</span>
                 <span>{getTotalPrice()} ֏</span>
-              </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Առաքում</span>
-                <span className="text-green-600 font-semibold">Անվճար</span>
               </div>
               <div className="border-t border-gray-300 pt-3">
                 <div className="flex justify-between text-lg font-bold text-gray-900">

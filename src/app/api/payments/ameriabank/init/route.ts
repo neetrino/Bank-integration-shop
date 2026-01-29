@@ -136,8 +136,19 @@ export async function POST(request: NextRequest) {
     logger.error('Ameria Bank init payment error', error)
 
     const isDev = process.env.NODE_ENV === 'development'
-    
-    // Log detailed error information
+    const message = error instanceof Error ? error.message : 'Unknown error'
+
+    // Ограничение тестового режима банка: только 10 AMD (код 560)
+    if (process.env.AMERIA_BANK_ENVIRONMENT === 'test' && (message.includes('560') || message.includes('10 AMD'))) {
+      return NextResponse.json(
+        {
+          error: 'В тестовом режиме Ameriabank принимает только сумму 10 AMD. Укажите в заказе сумму 10 AMD для проверки оплаты.',
+          code: 'AMERIA_TEST_AMOUNT_10',
+        },
+        { status: 400 }
+      )
+    }
+
     if (error instanceof Error) {
       logger.error('Error details', {
         name: error.name,

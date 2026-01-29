@@ -24,26 +24,81 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   
+  // Способы доставки из админки
+  interface DeliveryTypeItem {
+    id: string
+    name: string
+    deliveryTime: string
+    description: string
+    price: number
+    isActive: boolean
+  }
+  const [deliveryTypes, setDeliveryTypes] = useState<DeliveryTypeItem[]>([])
+  const [selectedDeliveryId, setSelectedDeliveryId] = useState<string>('')
+
   // Form state
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     address: '',
-    deliveryTime: 'asap', // Дефолтное значение "Как можно скорее"
+    deliveryTime: '', // Будет заполнено из выбранного способа доставки
     paymentMethod: 'cash',
     notes: ''
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Функция для расчета стоимости доставки
-  const getDeliveryPrice = () => {
-    const total = getTotalPrice()
-    if (total >= 10000) {
-      return 0 // Бесплатная доставка от 10000 ֏
+  // Загрузка способов доставки из API (те, что созданы в админке)
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/delivery-types')
+        if (!res.ok) return
+        const json = await res.json()
+        if (json.success && Array.isArray(json.data)) {
+          const active = (json.data as DeliveryTypeItem[]).filter((t) => t.isActive !== false)
+          setDeliveryTypes(active)
+          if (active.length > 0 && !selectedDeliveryId) {
+            setSelectedDeliveryId(active[0].id)
+            setFormData((prev) => ({
+              ...prev,
+              deliveryTime: `${active[0].name} (${active[0].deliveryTime})`,
+            }))
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load delivery types', e)
+      }
     }
-    return 1000 // Стандартная стоимость доставки
+    load()
+  }, [])
+
+  // Синхронизация deliveryTime при смене способа доставки
+  useEffect(() => {
+    if (selectedDeliveryId && deliveryTypes.length > 0) {
+      const t = deliveryTypes.find((d) => d.id === selectedDeliveryId)
+      if (t) {
+        setFormData((prev) => ({
+          ...prev,
+          deliveryTime: `${t.name} (${t.deliveryTime})`,
+        }))
+      }
+    }
+  }, [selectedDeliveryId, deliveryTypes])
+
+  // Выбранный способ доставки (название и цена из API /api/delivery-types — то, что создано в админке)
+  const getSelectedDeliveryType = (): DeliveryTypeItem | null => {
+    if (!selectedDeliveryId || deliveryTypes.length === 0) return null
+    return deliveryTypes.find((d) => d.id === selectedDeliveryId) ?? null
   }
+
+  const getDeliveryPrice = (): number => {
+    const t = getSelectedDeliveryType()
+    return t ? t.price : 0
+  }
+
+  // Итого с доставкой (товары + доставка)
+  const getTotalWithDelivery = (): number => getTotalPrice() + getDeliveryPrice()
 
   // Redirect if cart is empty and validate cart
   useEffect(() => {
@@ -159,7 +214,7 @@ export default function CheckoutPage() {
     setIsSubmitting(true)
 
     try {
-      const total = getTotalPrice()
+      const total = getTotalWithDelivery() // товары + доставка
       
       // Prepare order data
       const orderData = {
@@ -399,30 +454,28 @@ export default function CheckoutPage() {
                   {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                 </div>
 
-                {/* Delivery Time */}
+                {/* Способ доставки (из админки) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Clock className="inline h-4 w-4 mr-1" />
-                    Время доставки *
+                    Способ доставки *
                   </label>
-                  <select
-                    name="deliveryTime"
-                    value={formData.deliveryTime}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-gray-900"
-                  >
-                    <option value="asap">Как можно скорее (20-30 мин)</option>
-                    <option value="11:00-12:00">11:00 - 12:00</option>
-                    <option value="12:00-13:00">12:00 - 13:00</option>
-                    <option value="13:00-14:00">13:00 - 14:00</option>
-                    <option value="14:00-15:00">14:00 - 15:00</option>
-                    <option value="15:00-16:00">15:00 - 16:00</option>
-                    <option value="16:00-17:00">16:00 - 17:00</option>
-                    <option value="17:00-18:00">17:00 - 18:00</option>
-                    <option value="18:00-19:00">18:00 - 19:00</option>
-                    <option value="19:00-20:00">19:00 - 20:00</option>
-                    <option value="20:00-21:00">20:00 - 21:00</option>
-                  </select>
+                  {deliveryTypes.length === 0 ? (
+                    <p className="text-amber-600 text-sm">Нет доступных способов доставки. Добавьте в админке.</p>
+                  ) : (
+                    <select
+                      name="deliveryType"
+                      value={selectedDeliveryId}
+                      onChange={(e) => setSelectedDeliveryId(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-gray-900"
+                    >
+                      {deliveryTypes.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} — {t.deliveryTime} ({formatPrice(t.price)} ֏)
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   {errors.deliveryTime && <p className="text-red-500 text-sm mt-1">{errors.deliveryTime}</p>}
                 </div>
               </div>
@@ -596,13 +649,15 @@ export default function CheckoutPage() {
                       <span>Товары</span>
                       <span>{formatPrice(getTotalPrice())} ֏</span>
                     </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Доставка</span>
-                      <span>{getDeliveryPrice()} ֏</span>
-                    </div>
+                    {getSelectedDeliveryType() && (
+                      <div className="flex justify-between text-gray-600">
+                        <span>Доставка: {getSelectedDeliveryType()!.name}</span>
+                        <span>{formatPrice(getDeliveryPrice())} ֏</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-lg font-bold text-gray-900 border-t border-gray-300 pt-2">
                       <span>Итого</span>
-                      <span>{formatPrice(getTotalPrice())} ֏</span>
+                      <span>{formatPrice(getTotalWithDelivery())} ֏</span>
                     </div>
                   </div>
                 </div>
@@ -610,7 +665,7 @@ export default function CheckoutPage() {
               
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || deliveryTypes.length === 0}
                 className="w-full bg-orange-500 text-white py-4 rounded-xl font-semibold hover:bg-orange-600 transition-colors text-center text-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Оформляем заказ...' : 'Подтвердить заказ'}
@@ -699,30 +754,28 @@ export default function CheckoutPage() {
                     {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                   </div>
 
-                  {/* Delivery Time */}
+                  {/* Способ доставки (из админки) */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <Clock className="inline h-4 w-4 mr-1" />
-                      Время доставки *
+                      Способ доставки *
                     </label>
-                    <select
-                      name="deliveryTime"
-                      value={formData.deliveryTime}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-gray-900"
-                    >
-                      <option value="asap">Как можно скорее (20-30 мин)</option>
-                      <option value="11:00-12:00">11:00 - 12:00</option>
-                      <option value="12:00-13:00">12:00 - 13:00</option>
-                      <option value="13:00-14:00">13:00 - 14:00</option>
-                      <option value="14:00-15:00">14:00 - 15:00</option>
-                      <option value="15:00-16:00">15:00 - 16:00</option>
-                      <option value="16:00-17:00">16:00 - 17:00</option>
-                      <option value="17:00-18:00">17:00 - 18:00</option>
-                      <option value="18:00-19:00">18:00 - 19:00</option>
-                      <option value="19:00-20:00">19:00 - 20:00</option>
-                      <option value="20:00-21:00">20:00 - 21:00</option>
-                    </select>
+                    {deliveryTypes.length === 0 ? (
+                      <p className="text-amber-600 text-sm">Нет доступных способов доставки. Добавьте в админке.</p>
+                    ) : (
+                      <select
+                        name="deliveryType"
+                        value={selectedDeliveryId}
+                        onChange={(e) => setSelectedDeliveryId(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-gray-900"
+                      >
+                        {deliveryTypes.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name} — {t.deliveryTime} ({formatPrice(t.price)} ֏)
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     {errors.deliveryTime && <p className="text-red-500 text-sm mt-1">{errors.deliveryTime}</p>}
                   </div>
 
@@ -903,13 +956,15 @@ export default function CheckoutPage() {
                         <span>Товары</span>
                         <span>{formatPrice(getTotalPrice())} ֏</span>
                       </div>
-                      <div className="flex justify-between text-gray-600">
-                        <span>Доставка</span>
-                        <span>{getDeliveryPrice()} ֏</span>
-                      </div>
+                      {getSelectedDeliveryType() && (
+                        <div className="flex justify-between text-gray-600">
+                          <span>Доставка: {getSelectedDeliveryType()!.name}</span>
+                          <span>{formatPrice(getDeliveryPrice())} ֏</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-lg font-bold text-gray-900 border-t border-gray-300 pt-2">
                         <span>Итого</span>
-                        <span>{formatPrice(getTotalPrice())} ֏</span>
+                        <span>{formatPrice(getTotalWithDelivery())} ֏</span>
                       </div>
                     </div>
                   </div>
@@ -917,7 +972,7 @@ export default function CheckoutPage() {
                 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || deliveryTypes.length === 0}
                   className="w-full bg-orange-500 text-white py-4 rounded-xl font-semibold hover:bg-orange-600 transition-colors text-center text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? 'Оформляем заказ...' : 'Подтвердить заказ'}

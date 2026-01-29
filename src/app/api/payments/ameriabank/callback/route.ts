@@ -186,14 +186,14 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Payment successful (responseCode = "00")
-    // Check payment status
-    const isSuccessful = ameriaService.isPaymentSuccessful(paymentDetails)
-    const isApproved = ameriaService.isPaymentApproved(paymentDetails)
+    // По документу Ameriabank vPOS 3.1 (Table 2):
+    // OrderStatus 2 = payment_deposited — сумма списана → «Оплачено».
+    // OrderStatus 1 = payment_approved — сумма заморожена (two-stage); нужен ConfirmPayment для списания.
+    const isDeposited = ameriaService.isPaymentSuccessful(paymentDetails)  // OrderStatus === 2
+    const isApproved = ameriaService.isPaymentApproved(paymentDetails)     // OrderStatus === 1
 
-    // Update existing order status (order was created before payment, like WordPress plugin)
-    if (isSuccessful) {
-      // Payment completed successfully - update order to CONFIRMED and save bank PaymentID for refund/cancel
+    if (isDeposited) {
+      // OrderStatus 2 — деньги уже списаны (single-stage или после confirm)
       await prisma.order.update({
         where: { id: orderId },
         data: {
@@ -203,50 +203,98 @@ export async function GET(request: NextRequest) {
           updatedAt: new Date(),
         },
       })
-
-      logger.info('Order payment successful', {
+      logger.info('Order payment successful (deposited)', {
         orderId,
         paymentID: callbackParams.paymentID,
         amount: paymentDetails.Amount,
       })
-
-      return NextResponse.redirect(
-        new URL(`/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&clearCart=true`, request.url)
-      )
-    } else if (isApproved) {
-      // Payment approved but not yet deposited (two-stage payment)
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: 'CONFIRMED',
-          paymentStatus: PaymentStatus.PENDING,
-          paymentTransactionId: callbackParams.paymentID,
-          updatedAt: new Date(),
-        },
-      })
-
-      logger.info('Order payment approved (preauthorized)', {
-        orderId,
-        paymentID: callbackParams.paymentID,
-      })
-
-      return NextResponse.redirect(
-        new URL(`/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&status=approved&clearCart=true`, request.url)
-      )
-    } else {
-      // Should not happen if responseCode = "00", but handle it
-      logger.warn('Payment responseCode is 00 but status check failed', {
-        orderId,
-        paymentID: callbackParams.paymentID,
-        orderStatus: paymentDetails.OrderStatus,
-        paymentState: paymentDetails.PaymentState,
-      })
-      
-      // Keep order as PENDING
       return NextResponse.redirect(
         new URL(`/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&clearCart=true`, request.url)
       )
     }
+
+    if (isApproved) {
+      // OrderStatus 1 — предавторизация (заморожено). По документу: отправляем ConfirmPayment для второго этапа.
+      try {
+        const confirmResult = await ameriaService.confirmPayment(
+          callbackParams.paymentID,
+          order.total
+        )
+        if (confirmResult.ResponseCode === '00') {
+          await prisma.order.update({
+            where: { id: orderId },
+            data: {
+              status: 'CONFIRMED',
+              paymentStatus: PaymentStatus.SUCCESS,
+              paymentTransactionId: callbackParams.paymentID,
+              updatedAt: new Date(),
+            },
+          })
+          logger.info('Order payment confirmed (two-stage)', {
+            orderId,
+            paymentID: callbackParams.paymentID,
+            amount: order.total,
+          })
+          return NextResponse.redirect(
+            new URL(`/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&clearCart=true`, request.url)
+          )
+        }
+        logger.warn('ConfirmPayment failed', {
+          orderId,
+          paymentID: callbackParams.paymentID,
+          responseCode: confirmResult.ResponseCode,
+          responseMessage: confirmResult.ResponseMessage,
+        })
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
+            paymentStatus: PaymentStatus.PENDING,
+            paymentTransactionId: callbackParams.paymentID,
+            updatedAt: new Date(),
+          },
+        })
+        return NextResponse.redirect(
+          new URL(
+            `/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&message=${encodeURIComponent(confirmResult.ResponseMessage || 'ConfirmPayment failed')}`,
+            request.url
+          )
+        )
+      } catch (confirmError) {
+        logger.error('ConfirmPayment error', { orderId, paymentID: callbackParams.paymentID, confirmError })
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
+            paymentStatus: PaymentStatus.PENDING,
+            paymentTransactionId: callbackParams.paymentID,
+            updatedAt: new Date(),
+          },
+        })
+        return NextResponse.redirect(
+          new URL(
+            `/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&message=${encodeURIComponent('Ошибка подтверждения платежа')}`,
+            request.url
+          )
+        )
+      }
+    }
+
+    // Неожиданный OrderStatus при responseCode "00" (например 0, 3, 4, 5, 6)
+    logger.warn('Payment responseCode is 00 but OrderStatus not 1/2', {
+      orderId,
+      paymentID: callbackParams.paymentID,
+      orderStatus: paymentDetails.OrderStatus,
+      paymentState: paymentDetails.PaymentState,
+    })
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        paymentTransactionId: callbackParams.paymentID,
+        updatedAt: new Date(),
+      },
+    })
+    return NextResponse.redirect(
+      new URL(`/order-success?orderId=${orderId}&paymentId=${callbackParams.paymentID}&clearCart=true`, request.url)
+    )
   } catch (error) {
     logger.error('Ameria Bank callback error', error)
 
