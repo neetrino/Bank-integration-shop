@@ -198,15 +198,13 @@ export default function CheckoutPage() {
       
       // Handle payment based on payment method
       if (formData.paymentMethod === 'ameriabank') {
-        // For bank payment: initialize payment with order ID
+        // Ameria Bank: init and redirect to bank URL
         try {
           const paymentResponse = await fetch('/api/payments/ameriabank/init', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              orderId: order.id, // Pass only order ID (short string, like WordPress)
+              orderId: order.id,
               amount: total,
               currency: 'AMD',
               description: `Order #${order.id}`,
@@ -216,24 +214,60 @@ export default function CheckoutPage() {
           if (!paymentResponse.ok) {
             const errorData = await paymentResponse.json().catch(() => ({}))
             const errorMessage = errorData.error || paymentResponse.statusText || 'Неизвестная ошибка'
-            
             alert(`Ошибка при инициализации платежа: ${errorMessage}\n\nПопробуйте еще раз или выберите другой способ оплаты.`)
             setIsSubmitting(false)
             return
           }
 
           const paymentData = await paymentResponse.json()
-          
-          // Clear cart before redirecting (like WordPress plugin does)
           clearCart()
-          
-          // Redirect to bank payment page (не сбрасываем isSubmitting, чтобы предотвратить повторную отправку)
           window.location.href = paymentData.paymentUrl
           return
         } catch (paymentError) {
           console.error('Payment initialization error:', paymentError)
-          const errorMessage = paymentError instanceof Error ? paymentError.message : 'Неизвестная ошибка'
-          alert(`Ошибка при инициализации платежа: ${errorMessage}\n\nПопробуйте еще раз или выберите другой способ оплаты.`)
+          alert(`Ошибка при инициализации платежа. Попробуйте еще раз или выберите другой способ оплаты.`)
+          setIsSubmitting(false)
+          return
+        }
+      }
+
+      if (formData.paymentMethod === 'idram') {
+        // IDram: init and submit form to Idram (POST to banking.idram.am)
+        try {
+          const paymentResponse = await fetch('/api/payments/idram/init', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: order.id }),
+          })
+
+          if (!paymentResponse.ok) {
+            const errorData = await paymentResponse.json().catch(() => ({}))
+            const errorMessage = errorData.error || paymentResponse.statusText || 'Неизвестная ошибка'
+            alert(`Ошибка при инициализации платежа IDram: ${errorMessage}\n\nПопробуйте еще раз или выберите другой способ оплаты.`)
+            setIsSubmitting(false)
+            return
+          }
+
+          const { formUrl, formData: idramFormData } = await paymentResponse.json()
+          clearCart()
+
+          const form = document.createElement('form')
+          form.method = 'POST'
+          form.action = formUrl
+          form.style.display = 'none'
+          Object.entries(idramFormData).forEach(([key, value]) => {
+            const input = document.createElement('input')
+            input.type = 'hidden'
+            input.name = key
+            input.value = String(value ?? '')
+            form.appendChild(input)
+          })
+          document.body.appendChild(form)
+          form.submit()
+          return
+        } catch (paymentError) {
+          console.error('IDram payment init error:', paymentError)
+          alert(`Ошибка при инициализации платежа IDram. Попробуйте еще раз или выберите другой способ оплаты.`)
           setIsSubmitting(false)
           return
         }
@@ -480,10 +514,41 @@ export default function CheckoutPage() {
                       <CreditCard className="h-6 w-6 text-purple-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-base font-semibold text-gray-900">Онлайн оплата</h3>
+                      <h3 className="text-base font-semibold text-gray-900">Ameria Bank</h3>
                       <p className="text-sm text-gray-600">Оплата картой через Ameria Bank</p>
                     </div>
                     {formData.paymentMethod === 'ameriabank' && (
+                      <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                        <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </label>
+
+                <label className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
+                  formData.paymentMethod === 'idram' 
+                    ? 'border-orange-500 bg-orange-50' 
+                    : 'border-gray-300'
+                }`}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="idram"
+                    checked={formData.paymentMethod === 'idram'}
+                    onChange={handleInputChange}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                      <CreditCard className="h-6 w-6 text-amber-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base font-semibold text-gray-900">IDram</h3>
+                      <p className="text-sm text-gray-600">Оплата через кошелёк IDram</p>
+                    </div>
+                    {formData.paymentMethod === 'idram' && (
                       <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
                         <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -667,7 +732,7 @@ export default function CheckoutPage() {
                       <CreditCard className="inline h-4 w-4 mr-1" />
                       Способ оплаты *
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <label className={`relative p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg ${
                         formData.paymentMethod === 'cash' 
                           ? 'border-orange-500 bg-orange-50 shadow-md' 
@@ -749,9 +814,40 @@ export default function CheckoutPage() {
                           <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <CreditCard className="h-8 w-8 text-purple-600" />
                           </div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">Онлайн оплата</h3>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">Ameria Bank</h3>
                           <p className="text-sm text-gray-600">Оплата картой через Ameria Bank</p>
                           {formData.paymentMethod === 'ameriabank' && (
+                            <div className="absolute top-4 right-4">
+                              <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                                <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </label>
+
+                      <label className={`relative p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg ${
+                        formData.paymentMethod === 'idram' 
+                          ? 'border-orange-500 bg-orange-50 shadow-md' 
+                          : 'border-gray-300 hover:border-orange-300'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="idram"
+                          checked={formData.paymentMethod === 'idram'}
+                          onChange={handleInputChange}
+                          className="sr-only"
+                        />
+                        <div className="text-center">
+                          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <CreditCard className="h-8 w-8 text-amber-600" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">IDram</h3>
+                          <p className="text-sm text-gray-600">Оплата через кошелёк IDram</p>
+                          {formData.paymentMethod === 'idram' && (
                             <div className="absolute top-4 right-4">
                               <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
                                 <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">

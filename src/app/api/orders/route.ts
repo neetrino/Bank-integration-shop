@@ -92,9 +92,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine payment status based on payment method
-    // For bank payments, status is PENDING until payment is confirmed
+    // For online payments (Ameria, IDram), status is PENDING until payment is confirmed
     // For cash/card on delivery, payment status is null (not applicable)
-    const paymentStatus: PaymentStatus | null = paymentMethod === 'ameriabank' ? PaymentStatus.PENDING : null
+    const paymentStatus: PaymentStatus | null =
+      paymentMethod === 'ameriabank' || paymentMethod === 'idram'
+        ? PaymentStatus.PENDING
+        : null
 
     // Create order (supports both authenticated and guest users)
     const order = await prisma.order.create({

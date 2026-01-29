@@ -74,7 +74,8 @@ export default function OrderSuccessPage() {
   }
   
   const error = searchParams.get('error')
-  const orderId = searchParams.get('orderId')
+  // orderId from URL; Idram redirects with EDP_BILL_NO
+  const orderId = searchParams.get('orderId') || searchParams.get('EDP_BILL_NO')
   const paymentId = searchParams.get('paymentId')
   const message = searchParams.get('message')
   const responseCode = searchParams.get('responseCode')
