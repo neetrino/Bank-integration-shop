@@ -1,0 +1,399 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Payment gateway for Ameriabank\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-07-10 12:38+0000\n"
+"PO-Revision-Date: 2024-01-03 10:52+0000\n"
+"Last-Translator: \n"
+"Language-Team: English (United States)\n"
+"Language: en_US\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.5.2; wp-5.7.2\n"
+"X-Domain: payment-gateway-for-ameriabank"
+
+#. URI of the plugin
+msgid "#"
+msgstr "#"
+
+#: includes/main.php:878
+msgid ")"
+msgstr ")"
+
+#: includes/main.php:586
+msgid "Activate shopping cart function"
+msgstr ""
+"Activate shopping cart function\n"
+
+#: includes/main.php:61 includes/main.php:81 includes/main.php:527
+msgid "Add a credit card"
+msgstr "Add a credit card"
+
+#: includes/main.php:1086
+msgid "Ameriabank CJSC"
+msgstr "Ameriabank CJSC"
+
+#: includes/main.php:1089
+msgid ""
+"Before using the plugin, please contact the bank to receive respective "
+"regulations."
+msgstr ""
+"Before using the plugin, please contact the bank to receive respective "
+"regulations."
+
+#: includes/main.php:516
+msgid "Card Binding"
+msgstr "Card Binding"
+
+#: includes/main.php:585
+msgid "Cart totals"
+msgstr ""
+"Cart totals\n"
+
+#: includes/main.php:566
+msgid "ClientID"
+msgstr "ClientID"
+
+#: includes/main.php:700
+msgid "Connection error."
+msgstr "Connection error."
+
+#: includes/main.php:1127
+msgid ""
+"Contact us at the specified phone number or e-mail address for "
+"authentication."
+msgstr ""
+"Contact us at the specified phone number or e-mail address for "
+"authentication."
+
+#: includes/main.php:559
+msgid "Debug Log"
+msgstr "Debug Log"
+
+#: includes/main.php:469
+msgid "Description"
+msgstr "Description"
+
+#: includes/main.php:518
+msgid "Enable card binding option"
+msgstr "Enable card binding option"
+
+#: includes/main.php:561
+msgid "Enable debug mode"
+msgstr "Enable debug mode"
+
+#: includes/main.php:552
+msgid "Enable Multi-Currency"
+msgstr "Enable Multi-Currency"
+
+#: includes/main.php:509
+msgid "Enable payment confirmation function"
+msgstr "Enable payment confirmation function"
+
+#: includes/main.php:455
+msgid "Enable payment gateway"
+msgstr "Enable payment gateway"
+
+#: includes/main.php:501
+msgid "Enable test Mode"
+msgstr "Enable test Mode"
+
+#: includes/main.php:454
+msgid "Enable/Disable"
+msgstr "Enable/Disable"
+
+#: includes/main.php:436
+msgid "here"
+msgstr "here"
+
+#: includes/main.php:484
+msgid "Here interface language of bank purchase can be regulated"
+msgstr "Here interface language of bank purchase can be regulated"
+
+#: includes/main.php:449
+msgid "Here you can change the language of the plugin control panel."
+msgstr "Here you can change the language of the plugin control panel."
+
+#: includes/main.php:495
+msgid "Here you can select the status of confirmed payment orders."
+msgstr "Here you can select the status of confirmed payment orders."
+
+#. Author of the plugin
+msgid "HK Digital Agency LLC"
+msgstr "HK Digital Agency LLC"
+
+#. Author URI of the plugin
+msgid "https://hkdigital.am"
+msgstr "https://hkdigital.am"
+
+#: includes/main.php:1146
+msgid "I have read and agree to the Plugin"
+msgstr ""
+"I have read and agree to the Plugin\n"
+
+#: includes/main.php:1124
+msgid "IDENTIFICATION"
+msgstr "IDENTIFICATION"
+
+#: includes/main.php:1130
+msgid "Identification password"
+msgstr "Identification password"
+
+#: includes/main.php:477
+msgid "Language"
+msgstr "Language"
+
+#: includes/main.php:593
+msgid "Links"
+msgstr ""
+"Links\n"
+
+#: includes/main.php:431
+msgid ""
+"Log Payment Gateway for Ameriabank events, inside <code>"
+"woocommerce/logs/ameriabank.txt</code>"
+msgstr ""
+"Log Payment Gateway for Ameriabank events, inside "
+"woocommerce/logs/ameriabank.txt"
+
+#: includes/main.php:551
+msgid "Multi-Currency"
+msgstr "Multi-Currency"
+
+#: includes/main.php:524
+msgid "New binding card text"
+msgstr "New binding card text"
+
+#: includes/main.php:892
+msgid "No Saved Cards"
+msgstr "No Saved Cards"
+
+#: includes/main.php:1085
+msgid "Online payment gateway"
+msgstr "Online payment gateway"
+
+#: includes/main.php:576
+msgid "Password"
+msgstr "Password"
+
+#: includes/main.php:59 includes/main.php:70 includes/main.php:464
+msgid "Pay via credit card"
+msgstr "Pay via credit card"
+
+#. Description of the plugin
+msgid ""
+"Pay with  Ameriabank payment system. Please note that the payment will be "
+"made in Armenian Dram."
+msgstr ""
+"Pay with Ameriabank payment system. Please note that the payment will be "
+"made in Armenian Dram."
+
+#. Name of the plugin
+msgid "Payment gateway for Ameriabank"
+msgstr "Payment gateway for Ameriabank"
+
+#: includes/main.php:1169
+msgid "Payment system"
+msgstr "Payment system"
+
+#: includes/main.php:1302 includes/main.php:1372
+msgid "Please try again later."
+msgstr "Please try again later."
+
+#: includes/main.php:645 includes/main.php:654 includes/main.php:695
+msgid "Please try again."
+msgstr "Please try again."
+
+#: includes/main.php:442 includes/main.php:1109
+msgid "Plugin language"
+msgstr "Plugin language"
+
+#: includes/main.php:60 includes/main.php:472
+msgid ""
+"Purchase by  credit card. Please, note that purchase is going to be made by "
+"Armenian drams. "
+msgstr ""
+"Purchase by credit card. Please, note that purchase is going to be made by "
+"Armenian drams."
+
+#: includes/main.php:62 includes/main.php:82 includes/main.php:536
+msgid "Purchase safely by using your saved credit card"
+msgstr "Purchase safely by using your saved credit card"
+
+#: includes/main.php:533
+msgid "Save card description text"
+msgstr "Save card description text"
+
+#: wc-hkdigital-ameriabank-gateway.php:66
+msgid "Settings"
+msgstr "Settings"
+
+#: includes/main.php:489
+msgid "Success Order Status"
+msgstr "Success Order Status"
+
+#: includes/main.php:1148
+msgid "Terms & Conditions"
+msgstr ""
+"Terms & Conditions\n"
+
+#: includes/main.php:500
+msgid "Test mode"
+msgstr "Test mode"
+
+#: includes/main.php:86
+msgid "Test payment"
+msgstr "Test payment"
+
+#: includes/main.php:1158
+msgid ""
+"The content of this plugin is protected by the legislation of the Republic "
+"of Armenia on copyright and related rights. The content may not be "
+"reproduced, distributed, illustrated, adapted or otherwise transformed, or "
+"otherwise used, unless permission has been obtained from HK DIGITAL AGENCY "
+"LLC prior to such use."
+msgstr ""
+"The content of this plugin is protected by the legislation of the Republic "
+"of Armenia on copyright and related rights. The content may not be "
+"reproduced, distributed, illustrated, adapted or otherwise transformed, or "
+"otherwise used, unless permission has been obtained from HK DIGITAL AGENCY "
+"LLC prior to such use."
+
+#: includes/main.php:521
+msgid ""
+"The function of the card binding is available only with the permission of "
+"the bank."
+msgstr ""
+"The function of the card binding is available only with the permission of "
+"the bank."
+
+#: includes/main.php:554
+msgid ""
+"This action, if permitted by the bank, enables to purchase by multiple "
+"currencies"
+msgstr ""
+"This action, if permitted by the bank, enables to purchase by multiple "
+"currencies"
+
+#: includes/main.php:588
+msgid ""
+"This feature ensures that the contents of the shopping cart are available at "
+"the time of order registration if the site buyer decides to change the "
+"payment method."
+msgstr ""
+"This feature ensures that the contents of the shopping cart are available at "
+"the time of order registration if the site buyer decides to change the "
+"payment method."
+
+#: includes/main.php:461
+msgid "Title"
+msgstr "Title"
+
+#: includes/main.php:503
+msgid ""
+"To test the testing version login and password provided by the bank should "
+"be typed"
+msgstr ""
+"To test the testing version login and password provided by the bank should "
+"be typed"
+
+#: includes/main.php:1257
+msgid "Token not valid"
+msgstr "Token not valid"
+
+#: includes/main.php:508
+msgid "Two-stage Payment"
+msgstr "Two-stage Payment"
+
+#: includes/main.php:511
+msgid ""
+"two-stage: when the payment amount is first blocked on the buyer’s account "
+"and then at the second stage is withdrawn from the account"
+msgstr ""
+"two-stage: when the payment amount is first blocked on the buyer’s account "
+"and then at the second stage is withdrawn from the account"
+
+#: includes/main.php:568
+msgid "Type the client ID"
+msgstr "Type the client ID"
+
+#: includes/main.php:474
+msgid "Type the description"
+msgstr "Type the description"
+
+#: includes/main.php:578
+msgid "Type the password"
+msgstr "Type the password"
+
+#: includes/main.php:525
+#| msgid "Type the save card header text"
+msgid "Type the save card checkbox text"
+msgstr ""
+"Type the save card header text\n"
+
+#: includes/main.php:534
+#| msgid "Type the save card button text"
+msgid "Type the save card description text"
+msgstr "Type the save card button text"
+
+#: includes/main.php:466
+msgid "Type the title"
+msgstr "Type the title"
+
+#: includes/main.php:543
+#| msgid "Enter use new card text"
+msgid "Type the use new card text"
+msgstr "Type the use new card text"
+
+#: includes/main.php:573
+msgid "Type the user name"
+msgstr "Type the user name"
+
+#: includes/main.php:63 includes/main.php:83 includes/main.php:545
+msgid "Use a new credit card"
+msgstr "Use a new credit card"
+
+#: includes/main.php:542
+msgid "Use new card text"
+msgstr "Use new card text"
+
+#: includes/main.php:581
+msgid "Useful functions"
+msgstr ""
+"Useful functions\n"
+
+#: includes/main.php:471
+msgid ""
+"User (website visitor) sees this description on order registry page in bank "
+"purchase option."
+msgstr ""
+"User (website visitor) sees this description on order registry page in bank "
+"purchase option."
+
+#: includes/main.php:463
+msgid ""
+"User (website visitor) sees this title on order registry page as a title for "
+"purchase option."
+msgstr ""
+"User (website visitor) sees this title on order registry page as a title for "
+"purchase option."
+
+#: includes/main.php:571
+msgid "User Name"
+msgstr "User Name"
+
+#: includes/main.php:873
+msgid "You can Delete Cards"
+msgstr "You can Delete Cards"
+
+#: includes/main.php:1225 includes/main.php:1263
+#| msgid "you must fill token"
+msgid "You must fill token"
+msgstr "You must fill token"
+
+#: includes/main.php:872
+msgid "Your card list"
+msgstr "Your card list"

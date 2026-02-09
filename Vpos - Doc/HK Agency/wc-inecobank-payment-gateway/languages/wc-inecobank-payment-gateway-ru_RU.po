@@ -1,0 +1,417 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Payment gateway for InecoBank\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-07-10 12:38+0000\n"
+"PO-Revision-Date: 2024-03-23 17:23+0000\n"
+"Last-Translator: \n"
+"Language-Team: Russian\n"
+"Language: ru_RU\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10 >= 2 && "
+"n%10<=4 &&(n%100<10||n%100 >= 20)? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.5.2; wp-5.7.2\n"
+"X-Domain: payment-gateway-for-InecoBank"
+
+#. URI of the plugin
+msgid "#"
+msgstr "#"
+
+#: includes/main.php:418
+msgid ")"
+msgstr ")"
+
+#: includes/main.php:709
+msgid "Activate shopping cart function"
+msgstr "Активировать функцию корзины"
+
+#: includes/main.php:60 includes/main.php:85 includes/main.php:655
+msgid "Add a credit card"
+msgstr "Добавить кредитную карту"
+
+#: includes/main.php:1076
+msgid ""
+"Before using the plugin, please contact the bank to receive respective "
+"regulations."
+msgstr ""
+"Перед использованием приложения вам необходимо связаться с банком для "
+"получения соответствующих настроек."
+
+#: includes/main.php:684
+msgid "Binding Password"
+msgstr "Пароль привязки"
+
+#: includes/main.php:679
+msgid "Binding User Name"
+msgstr "Имя пользователя привязки"
+
+#: includes/main.php:708
+msgid "Cart totals"
+msgstr "Содержимое корзины"
+
+#: includes/main.php:818
+msgid "Connection error."
+msgstr "Ошибка соединения."
+
+#: includes/main.php:1113
+msgid ""
+"Contact us at the specified phone number or e-mail address for "
+"authentication."
+msgstr ""
+"Свяжитесь с нами по указанному номеру телефона или адресу электронной почты "
+"для аутентификации."
+
+#: includes/main.php:610
+msgid "Debug Log"
+msgstr "Журнал отладки"
+
+#: includes/main.php:571
+msgid "Description"
+msgstr "Описание"
+
+#: includes/main.php:646
+msgid "Enable \"Save Card\" function"
+msgstr "Включить Режим привязки карты"
+
+#: includes/main.php:612
+msgid "Enable debug mode"
+msgstr "Включить режим отладки"
+
+#: includes/main.php:717
+msgid "Enable individual URL functionality"
+msgstr "Включить функциональность отдельных URL-адресов"
+
+#: includes/main.php:603
+msgid "Enable Multi-Currency"
+msgstr "Включить многовалютный режим"
+
+#: includes/main.php:637
+msgid "Enable payment confirmation function"
+msgstr "Включить функцию подтверждения платежа"
+
+#: includes/main.php:557
+msgid "Enable payment gateway"
+msgstr "Активировать платежную систему"
+
+#: includes/main.php:649
+msgid "Enable Save Card"
+msgstr "Включить Режим привязки карты"
+
+#: includes/main.php:618
+msgid "Enable test Mode"
+msgstr "Включить тестовую версию"
+
+#: includes/main.php:556
+msgid "Enable/Disable"
+msgstr "Включить / Отключить"
+
+#: includes/main.php:632 includes/main.php:686
+msgid "Enter password"
+msgstr "Пароль"
+
+#: includes/main.php:1122
+msgid "Example Inecobankgayudcsu14"
+msgstr "Пример Inecobankgayudcsu14 "
+
+#: includes/main.php:539
+msgid "here"
+msgstr "здесь"
+
+#: includes/main.php:586
+msgid "Here interface language of bank purchase can be regulated"
+msgstr ""
+"Здесь вы можете настроить язык интерфейса страницы банковского платежа."
+
+#: includes/main.php:551
+msgid "Here you can change the language of the plugin control panel."
+msgstr "Здесь вы можете изменить язык панели управления плагина."
+
+#: includes/main.php:597
+msgid "Here you can select the status of confirmed payment orders."
+msgstr ""
+"Здесь вы можете выбрать статус подтвержденных платежных поручений. Обратите "
+"внимание, что эта функция автоматически отключается когда включается функция "
+"подтверждения платежа."
+
+#. Author of the plugin
+msgid "HK Digital Agency LLC"
+msgstr "HK Digital Agency LLC"
+
+#. Author URI of the plugin
+msgid "https://hkdigital.am"
+msgstr "https://hkdigital.am"
+
+#: includes/main.php:1133
+msgid "I have read and agree to the Plugin"
+msgstr "Я прочитал и согласен с"
+
+#: includes/main.php:1110
+msgid "IDENTIFICATION"
+msgstr "Идентификация"
+
+#: includes/main.php:1117
+msgid "Identification password"
+msgstr "Идентификационный пароль"
+
+#: includes/main.php:1073
+msgid "INECO BANK"
+msgstr ""
+"INECO BANK\n"
+
+#: includes/main.php:579
+msgid "Language"
+msgstr "Язык"
+
+#: includes/main.php:724
+msgid "Links"
+msgstr "Ссылки"
+
+#: includes/main.php:690
+msgid "Live Settings"
+msgstr "Реальные параметры"
+
+#: includes/main.php:534
+msgid ""
+"Log HKD ARCA Gateway events, inside <code>woocommerce/logs/inecobank."
+"txt</code>"
+msgstr ""
+"Журнал событий для платежного шлюза INECOBANK можете посмотреть <code>"
+"woocommerce/logs/inecobank.txt</code>"
+
+#: includes/main.php:602
+msgid "Multi-Currency"
+msgstr "Многовалютный режим"
+
+#: includes/main.php:652
+msgid "New binding card text"
+msgstr "Текст новой привязки"
+
+#: includes/main.php:432
+msgid "No Saved Cards"
+msgstr "Нет сохраненных карт"
+
+#: includes/main.php:1072
+#| msgid "Online payment gateway"
+msgid "ONLINE PAYMENT GATEWAY"
+msgstr "Онлайн платежный шлюз"
+
+#: includes/main.php:699
+msgid "Password"
+msgstr "Пароль"
+
+#: includes/main.php:58 includes/main.php:566
+msgid "Pay via credit card"
+msgstr "Оплата кредитной картой"
+
+#. Description of the plugin
+msgid ""
+"Pay with  Inecobank payment system. Please note that the payment will be "
+"made in Armenian Dram."
+msgstr ""
+"Pay with Inecobank  payment system. Please note that the payment will be "
+"made in Armenian Dram.\n"
+
+#. Name of the plugin
+msgid "Payment gateway for Inecobank"
+msgstr "Payment gateway for Inecobank"
+
+#: includes/main.php:1150
+msgid "Payment system"
+msgstr "Платежная система"
+
+#: includes/main.php:1322 includes/main.php:1363 includes/main.php:1373
+#: includes/main.php:1407 includes/main.php:1414
+msgid "Please try again later."
+msgstr "Пожалуйста, повторите попытку позже."
+
+#: includes/main.php:788 includes/main.php:813
+msgid "Please try again."
+msgstr "Пожалуйста, попробуйте еще раз"
+
+#: includes/main.php:544 includes/main.php:1096
+msgid "Plugin language"
+msgstr "Язык плагина"
+
+#: includes/main.php:574
+msgid ""
+"Purchase by  credit card. Please, note that purchase is going to be made by "
+"Armenian drams. "
+msgstr ""
+"Оплата по кредитной карте. Обращаем ваше внимание, что закупка будет "
+"производиться в драмах РА."
+
+#: includes/main.php:59
+msgid ""
+"Purchase by credit card. Please, note that purchase is going to be made by "
+"Armenian drams. "
+msgstr ""
+"Оплата по кредитной карте. Обращаем ваше внимание, что закупка будет "
+"производиться в драмах РА."
+
+#: includes/main.php:61 includes/main.php:86 includes/main.php:664
+msgid "Purchase safely by using your saved credit card"
+msgstr "Совершайте безопасные покупки с помощью сохраненной кредитной карты"
+
+#: includes/main.php:644
+msgid "Save Card Admin"
+msgstr "Включить Режим привязки карты"
+
+#: includes/main.php:661
+msgid "Save card description text"
+msgstr "Описание прикрепленных банковских карт"
+
+#: wc-inecobank-payment-gateway.php:64
+msgid "Settings"
+msgstr "Настройки"
+
+#: includes/main.php:591
+msgid "Success Order Status"
+msgstr "Статус успешного заказа"
+
+#: includes/main.php:1135
+msgid "Terms & Conditions"
+msgstr "Условиями использования плагина"
+
+#: includes/main.php:617
+msgid "Test mode"
+msgstr "Тестовая версия"
+
+#: includes/main.php:630
+msgid "Test Password"
+msgstr "Тестовой пароль"
+
+#: includes/main.php:625
+msgid "Test User Name"
+msgstr "Тестовой пользователь"
+
+#: includes/main.php:605
+msgid ""
+"This action, if permitted by the bank, enables to purchase by multiple "
+"currencies"
+msgstr ""
+"Это действие, если это разрешено банком, позволяет совершать покупки в "
+"нескольких валютах."
+
+#: includes/main.php:711
+msgid ""
+"This feature ensures that the contents of the shopping cart are available at "
+"the time of order registration if the site buyer decides to change the "
+"payment method."
+msgstr ""
+"Эта функция гарантирует наличие содержимого корзины во время регистрации "
+"заказа, если покупатель сайта решит изменить способ оплаты."
+
+#: includes/main.php:563
+msgid "Title"
+msgstr "Заголовок"
+
+#: includes/main.php:620
+msgid ""
+"To test the testing version login and password provided by the bank should "
+"be typed"
+msgstr ""
+"Для тестирования с помощью тестовой версии вам необходимо ввести логин и "
+"пароль, предоставленный банком."
+
+#: includes/main.php:1238
+msgid "Token not valid"
+msgstr "Токен недействителен"
+
+#: includes/main.php:636
+msgid "Two-stage Payment"
+msgstr "Двухэтапная оплата"
+
+#: includes/main.php:639
+msgid ""
+"two-stage: when the payment amount is first blocked on the buyer’s account "
+"and then at the second stage is withdrawn from the account"
+msgstr ""
+"Двухэтапный платеж: когда сумма платежа сначала блокируется на счету "
+"покупателя, а затем на втором этапе снимается со счета"
+
+#: includes/main.php:576
+msgid "Type the description"
+msgstr "Введите название"
+
+#: includes/main.php:701
+msgid "Type the password"
+msgstr "Введите пароль"
+
+#: includes/main.php:653
+msgid "Type the save card checkbox text"
+msgstr "Введите текст прикрепленной банковской карты"
+
+#: includes/main.php:662
+msgid "Type the save card description text"
+msgstr "Введите описание прикрепленных банковских карт"
+
+#: includes/main.php:568
+msgid "Type the title"
+msgstr "Введите заголовок"
+
+#: includes/main.php:671
+msgid "Type the use new card text"
+msgstr "Введите текст использования новой карты"
+
+#: includes/main.php:696
+msgid "Type the user name"
+msgstr "Введите имя пользователя"
+
+#: includes/main.php:716
+msgid "URL Setting"
+msgstr "Настройка URL"
+
+#: includes/main.php:62 includes/main.php:87 includes/main.php:673
+msgid "Use a new credit card"
+msgstr "Используйте новую кредитную карту"
+
+#: includes/main.php:670
+msgid "Use new card text"
+msgstr "\"Использовать новую карту\" текст"
+
+#: includes/main.php:704
+msgid "Useful functions"
+msgstr "Полезные функции"
+
+#: includes/main.php:573
+msgid ""
+"User (website visitor) sees this description on order registry page in bank "
+"purchase option."
+msgstr ""
+"Пользователь (клиент сайта) видит это описание на странице оформления заказа,"
+" при выборе данный банковский шлюз как способ оплаты."
+
+#: includes/main.php:565
+msgid ""
+"User (website visitor) sees this title on order registry page as a title for "
+"purchase option."
+msgstr ""
+"Пользователь (клиент сайта) видит этот заголовок на странице оформления "
+"заказа как название способа оплаты."
+
+#: includes/main.php:694
+msgid "User Name"
+msgstr "Имя пользователя"
+
+#: includes/main.php:719
+msgid ""
+"When enabled, the response received from the bank is attached to individual "
+"URLs."
+msgstr ""
+"При включении функции ответ, полученный от банка прикрепляется к отдельным "
+"URL-адресам."
+
+#: includes/main.php:413
+msgid "You can Delete Cards"
+msgstr "Вы можете удалить карты"
+
+#: includes/main.php:1207 includes/main.php:1244
+msgid "You must fill token"
+msgstr "Вы должны заполнить токен"
+
+#: includes/main.php:412
+msgid "Your card list"
+msgstr "Список ваших карт"

@@ -1,0 +1,307 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Payment gateway for fastshift\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-07-10 12:38+0000\n"
+"PO-Revision-Date: 2023-12-23 11:01+0000\n"
+"Last-Translator: \n"
+"Language-Team: English (United States)\n"
+"Language: en_US\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.5.3; wp-5.8.3\n"
+"X-Domain: payment-gateway-for-fastshift"
+
+#. URI of the plugin
+msgid "#"
+msgstr "#"
+
+#: includes/main.php:200
+msgid "Activate shopping cart function"
+msgstr ""
+"Activate shopping cart function\n"
+
+#: includes/main.php:308
+msgid ""
+"Before using the plugin, please contact the bank to receive respective "
+"regulations."
+msgstr ""
+"Before using the plugin, it is necessary to contact \"Fast Shift\" LLC to "
+"obtain the appropriate settings."
+
+#: includes/main.php:199
+msgid "Cart totals"
+msgstr ""
+"Cart totals\n"
+
+#: includes/main.php:211
+msgid "Completed"
+msgstr "Completed"
+
+#: includes/main.php:268
+msgid "Connection error."
+msgstr ""
+"Connection error.\n"
+
+#: includes/main.php:353
+msgid ""
+"Contact us at the specified phone number or e-mail address for "
+"authentication."
+msgstr ""
+"Contact us at the specified phone number or e-mail address for "
+"authentication.\n"
+
+#: includes/main.php:166
+msgid "Debug Log"
+msgstr "Debug Log"
+
+#: includes/main.php:158
+msgid "Description"
+msgstr "Description"
+
+#: includes/main.php:168
+msgid "Enable debug mode"
+msgstr "Enable debug mode"
+
+#: includes/main.php:144
+msgid "Enable payment gateway"
+msgstr "Enable payment gateway"
+
+#: includes/main.php:174
+msgid "Enable test Mode"
+msgstr "Enable test Mode"
+
+#: includes/main.php:143
+msgid "Enable/Disable"
+msgstr "Enable/Disable"
+
+#: includes/main.php:183
+msgid "Enter Test Fast Shift Bearer Token"
+msgstr ""
+"Type Test Bearer Token\n"
+
+#: includes/main.php:305
+msgid "Fast Shift"
+msgstr ""
+"Fast Shift\n"
+
+#: includes/main.php:126
+msgid "here"
+msgstr "here"
+
+#: includes/main.php:138
+msgid "Here you can change the language of the plugin control panel."
+msgstr "Here you can change the language of the plugin control panel."
+
+#: includes/main.php:213
+msgid "Here you can select the status of confirmed payment orders."
+msgstr ""
+"Here you can select the status of confirmed payment orders.\n"
+
+#. Author of the plugin
+msgid "HK Digital Agency LLC"
+msgstr "HK Digital Agency LLC"
+
+#. Author URI of the plugin
+msgid "https://hkdigital.am"
+msgstr "https://hkdigital.am"
+
+#: includes/main.php:372
+msgid "I have read and agree to the Plugin"
+msgstr "I have read and agree to the Plugin"
+
+#: includes/main.php:350
+msgid "IDENTIFICATION"
+msgstr ""
+"IDENTIFICATION\n"
+
+#: includes/main.php:356
+msgid "Identification password"
+msgstr ""
+"Identification password\n"
+
+#: includes/main.php:317 includes/main.php:409
+msgid "Ip Address"
+msgstr ""
+"Ip Address\n"
+
+#: includes/main.php:218 includes/main.php:393 includes/main.php:398
+msgid "Links"
+msgstr "Information"
+
+#: includes/main.php:190
+msgid "Live Bearer Token"
+msgstr ""
+"Live Bearer Token\n"
+
+#: includes/main.php:186
+msgid "Live Settings"
+msgstr "Live Settings"
+
+#: includes/main.php:121
+#| msgid ""
+#| "Log HKD IDRAM Gateway events, inside <code>woocommerce/logs/fastshift."
+#| "txt</code>"
+msgid ""
+"Log HKD Fast Shift Gateway events, inside <code>woocommerce/logs/fastshift."
+"txt</code>"
+msgstr ""
+"Log HKD Fast Shift Gateway events, inside <code>woocommerce/logs/fastshift."
+"txt</code>"
+
+#: includes/main.php:304
+msgid "Online payment gateway"
+msgstr ""
+"Online payment gateway\n"
+
+#: includes/main.php:38 includes/main.php:153
+msgid "Pay via credit card"
+msgstr "Payment via Fastshift"
+
+#. Description of the plugin
+#| msgid ""
+#| "Pay with Fastshift payment system. Please note that the payment will be "
+#| "made in Armenian Dram."
+msgid ""
+"Pay with FastShift payment system. Please note that the payment will be made "
+"in Armenian Dram."
+msgstr "Pay with Fastshift. Please note that payment is made in AMD. "
+
+#. Name of the plugin
+#| msgid "Payment Gateway for Fastshift"
+msgid "Payment Gateway for FastShift"
+msgstr "Payment Gateway for Fastshift"
+
+#: includes/main.php:428
+msgid "Payment system"
+msgstr "Payment system"
+
+#: includes/main.php:263
+msgid "Please try again."
+msgstr "Please try again."
+
+#: includes/main.php:131 includes/main.php:335
+msgid "Plugin language"
+msgstr "Plugin language"
+
+#: includes/main.php:210
+msgid "Processing"
+msgstr ""
+"Processing\n"
+
+#: includes/main.php:161
+msgid ""
+"Purchase by  credit card. Please, note that purchase is going to be made by "
+"Armenian drams. "
+msgstr "Pay with Fastshift. Please note that payment is made in AMD."
+
+#: includes/main.php:39
+msgid ""
+"Purchase by credit card. Please, note that purchase is going to be made by "
+"Armenian drams. "
+msgstr "Pay with Fastshift. Please note that payment is made in AMD."
+
+#: wc-hkdigital-fastshift-gateway.php:64
+msgid "Settings"
+msgstr "Settings"
+
+#: includes/main.php:207
+msgid "Success Order Status"
+msgstr ""
+"Success Order Status\n"
+
+#: includes/main.php:374
+msgid "Terms & Conditions"
+msgstr "Terms & Conditions"
+
+#: includes/main.php:181
+msgid "Test Fast Shift Bearer Token"
+msgstr ""
+"Test Bearer Token\n"
+
+#: includes/main.php:173
+msgid "Test mode"
+msgstr "Test mode"
+
+#: includes/main.php:384
+msgid ""
+"The content of this plugin is protected by the legislation of the Republic "
+"of Armenia on copyright and related rights. The content may not be "
+"reproduced, distributed, illustrated, adapted or otherwise transformed, or "
+"otherwise used, unless permission has been obtained from HK DIGITAL AGENCY "
+"LLC prior to such use."
+msgstr ""
+"The content of this plugin is protected by the legislation of the Republic "
+"of Armenia on copyright and related rights. The content may not be "
+"reproduced, distributed, illustrated, adapted or otherwise transformed, or "
+"otherwise used, unless permission has been obtained from HK DIGITAL AGENCY "
+"LLC prior to such use."
+
+#: includes/main.php:202
+msgid ""
+"This feature ensures that the contents of the shopping cart are available at "
+"the time of order registration if the site buyer decides to change the "
+"payment method."
+msgstr ""
+"This feature ensures that the contents of the shopping cart are available at "
+"the time of order registration if the site buyer decides to change the "
+"payment method."
+
+#: includes/main.php:150
+msgid "Title"
+msgstr "Title"
+
+#: includes/main.php:176
+msgid ""
+"To test the testing version login and password provided by the bank should "
+"be typed"
+msgstr ""
+"To test the testing version login and password provided by the bank should "
+"be typed"
+
+#: includes/main.php:518
+msgid "Token not valid"
+msgstr ""
+"Token not valid\n"
+
+#: includes/main.php:192
+msgid "Type Live Bearer Token"
+msgstr ""
+"Type Live Bearer Token\n"
+
+#: includes/main.php:163
+msgid "Type the description"
+msgstr "Type the description"
+
+#: includes/main.php:155
+msgid "Type the title"
+msgstr "Type the title"
+
+#: includes/main.php:195
+msgid "Useful functions"
+msgstr ""
+"Useful functions\n"
+
+#: includes/main.php:160
+msgid ""
+"User (website visitor) sees this description on order registry page in bank "
+"purchase option."
+msgstr ""
+"User (website visitor) sees this description on order registry page in bank "
+"purchase option."
+
+#: includes/main.php:152
+msgid ""
+"User (website visitor) sees this title on order registry page as a title for "
+"purchase option."
+msgstr ""
+"User (website visitor) sees this title on order registry page as a title for "
+"purchase option."
+
+#: includes/main.php:486 includes/main.php:524
+msgid "You must fill token"
+msgstr ""
+"You must fill token\n"

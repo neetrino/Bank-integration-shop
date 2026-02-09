@@ -1,0 +1,91 @@
+{
+  "info": {
+    "name": "Ameriabank vPOS",
+    "description": "Запросы к Ameriabank vPOS (тест). Данные из .env.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "OrderID",
+      "value": "cmkwe1tjd00017qksxte4rruy",
+      "description": "ID заказа в нашей системе (для справки)"
+    },
+    {
+      "key": "PaymentID",
+      "value": "85cf3759-8f96-4166-bf32-2507970c7880",
+      "description": "ID транзакции банка (из заказа)"
+    },
+    {
+      "key": "ClientID",
+      "value": "f707bd34-5263-4a35-a5d5-50f67967ba57"
+    },
+    {
+      "key": "Username",
+      "value": "3d19541048"
+    },
+    {
+      "key": "Password",
+      "value": "lazY2k"
+    },
+    {
+      "key": "Amount",
+      "value": "10"
+    }
+  ],
+  "item": [
+    {
+      "name": "GetPaymentDetails",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"PaymentID\": \"{{PaymentID}}\",\n  \"Username\": \"{{Username}}\",\n  \"Password\": \"{{Password}}\"\n}"
+        },
+        "url": "https://servicestest.ameriabank.am/VPOS/api/VPOS/GetPaymentDetails",
+        "description": "Статус платежа по PaymentID. PaymentID взять из админки (заказ → ID транзакции)."
+      }
+    },
+    {
+      "name": "CancelPayment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"PaymentID\": \"{{PaymentID}}\",\n  \"Username\": \"{{Username}}\",\n  \"Password\": \"{{Password}}\"\n}"
+        },
+        "url": "https://servicestest.ameriabank.am/VPOS/api/VPOS/CancelPayment",
+        "description": "Отмена платежа (до 72 ч с момента инициализации)."
+      }
+    },
+    {
+      "name": "RefundPayment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"PaymentID\": \"{{PaymentID}}\",\n  \"Username\": \"{{Username}}\",\n  \"Password\": \"{{Password}}\",\n  \"Amount\": {{Amount}}\n}"
+        },
+        "url": "https://servicestest.ameriabank.am/VPOS/api/VPOS/RefundPayment",
+        "description": "Возврат. Amount — сумма в AMD (в тесте обычно 10)."
+      }
+    }
+  ]
+}

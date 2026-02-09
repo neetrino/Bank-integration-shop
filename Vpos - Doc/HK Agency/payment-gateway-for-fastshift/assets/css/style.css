@@ -1,0 +1,314 @@
+@font-face {
+    font-family: "Open Sans";
+    src: url("../fonts/OpenSans-Regular.ttf");
+}
+
+.wrap-fastshift .form-inner-area label {
+    font-weight: 600;
+    color: #3B4B58;
+}
+
+
+.wrap-fastshift .form-inner-area input {
+    width: 100%;
+    height: 56px;
+    padding-left: 30px;
+    margin-bottom: 15px;
+    border: 2px solid #ededed;
+    border-radius: 0.7rem;
+    -webkit-transition: 0.3s all ease-in-out;
+    -o-transition: 0.3s all ease-in-out;
+    transition: 0.3s all ease-in-out;
+}
+
+.wrap-fastshift .form-inner-area input:focus {
+    -webkit-box-shadow: 0px 5px 35px 0px rgba(29, 190, 114, 0.17);
+    box-shadow: 0px 5px 35px 0px rgba(29, 190, 114, 0.17);
+    border: 2px solid #1dbe72;
+}
+
+.font-size-14 {
+    font-size: 14px;
+}
+
+.wrap-fastshift .step-inner-content p {
+    font-family: Arial, Helvetica, sans-serif;
+    margin-bottom: 30px;
+}
+
+.wrap-fastshift .text-label-step {
+    font-size: 37px;
+    color: #3B4B58;
+    font-weight: 700;
+    padding: 0px 0px 20px 0px;
+}
+
+.wrap-fastshift .verification-label {
+    font-size: 24px;
+    color: #3B4B58;
+    font-weight: 700;
+    padding: 15px 0px 0px 0px;
+}
+
+.wrap-fastshift .budget-area {
+    margin-bottom: 25px;
+}
+
+.wrap-fastshift .budget-area p {
+    color: #5f5f63;
+    font-size: 23px;
+    font-weight: 700;
+    padding-bottom: 10px;
+}
+
+.wrap-fastshift .budget-area select {
+    width: 100%;
+    height: 56px;
+    padding-left: 30px;
+    margin-bottom: 15px;
+    border: 2px solid #ededed;
+    border-radius: 0.7rem;
+    -webkit-transition: 0.3s all ease-in-out;
+    -o-transition: 0.3s all ease-in-out;
+    transition: 0.3s all ease-in-out;
+}
+
+.wrap-fastshift .budget-area .opti-list ul {
+    margin-top: 10px;
+}
+
+.wrap-fastshift .budget-area .opti-list li {
+    position: relative;
+    display: inline-block;
+    margin-right: 25px;
+    font-size: 19px;
+    color: #5f5f63;
+    padding: 20px 20px 20px 60px;
+    width: 33%;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid #ededed;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.wrap-fastshift .budget-area .opti-list li:last-child {
+    margin-right: 0;
+}
+
+.wrap-fastshift .budget-area .opti-list li input {
+    opacity: 0;
+    position: absolute;
+    left: 15px;
+    top: 20px;
+    width: 28px;
+    height: 28px;
+}
+
+.wrap-fastshift .budget-area .opti-list li:after {
+    content: "";
+    position: absolute;
+    height: 28px;
+    left: 15px;
+    top: 20px;
+    width: 28px;
+    border: 2px solid #ededed;
+}
+
+.wrap-fastshift .budget-area .opti-list li:before {
+    content: "";
+    top: 28px;
+    left: 24px;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 900;
+    display: none;
+    color: #fff;
+    z-index: 1;
+    font-family: "Font Awesome 5 Free";
+    position: absolute;
+}
+
+.wrap-fastshift .budget-area .opti-list li.active {
+    border: 2px solid #6b59d3;
+    -webkit-box-shadow: 0 0 15px 5px #6b58d317;
+    box-shadow: 0 0 15px 5px #6b58d317;
+}
+
+.wrap-fastshift .budget-area .opti-list li.active:after {
+    border: 2px solid #6b59d3;
+    background-color: #6b59d3;
+}
+
+.wrap-fastshift .budget-area .opti-list li.active:before {
+    display: block;
+}
+.wrap-fastshift .text-center {
+    text-align: center;
+}
+
+.wrap-fastshift .budget-area select:focus {
+    border-color: #379199;
+    color: #379199;
+    box-shadow: 0 0 0 1px #379199;
+}
+
+
+.wrap-fastshift {
+    font-family: "Open Sans", Arial, sans-serif;
+    font-weight: normal;
+    font-style: normal;
+}
+
+.wrap-content-hkd-400px {
+    /*width: 400px;*/
+    width: 341px;
+    display: inline-block;
+    padding-left: 50px;
+    margin-bottom: 20px;
+}
+
+.wrap-content-hkd-400px h2 {
+    font-size: 30px;
+}
+
+.wrap-content-info {
+    padding-left: 50px;
+}
+
+.wrap-content-hkd-400px img {
+    width: 100%;
+}
+
+.wrap-content-hkd textarea {
+    width: 400px !important;
+}
+
+.wrap-fastshift .icon {
+    position: absolute;
+    left: 51px;
+    margin-top: 5px;
+}
+
+.wrap-fastshift .phone-icon {
+    color: #701767;
+}
+
+.wrap-fastshift .d-flex {
+    display: flex !important;
+}
+
+.wrap-fastshift .mt-10 {
+    margin-top: 10px;
+}
+.wrap-fastshift .mt-40 {
+    margin-top: 40px;
+}
+
+.wrap-fastshift .mb-10 {
+    margin-bottom: 10px;
+}
+
+.wrap-fastshift .plugin-terms {
+    margin-bottom: 50px;
+}
+
+.wrap-fastshift .w-100 {
+    width: 100%;
+}
+.pl-10 {
+    padding-left: 10px;
+}
+
+.wrap-fastshift .input-label-verification {
+    display: block;
+    padding-bottom: 3px
+}
+
+#pluginMainWrap {
+    width: 45%;
+    display: inline-block;
+    vertical-align: text-bottom;
+}
+
+#paymentInfoBlock {
+    width: 29%;
+    display: inline-block;
+    position: absolute;
+    padding-top: 75px;
+}
+
+.wrap-fastshift .mail-icon {
+    color: #701767;
+}
+
+.wrap-fastshift .phone-icon-2 {
+    color: #4ec3cc;
+}
+
+.wrap-fastshift .mail-icon-2 {
+    color: #4ec3cc;
+}
+
+.wrap-fastshift .wrap-content-info {
+    font-size: 16px;
+}
+
+.wrap-fastshift .wrap-content-info p {
+    font-size: 16px !important;
+}
+
+.wrap-fastshift .wrap-content-info a, .wrap-content-info a:hover, .wrap-content-info a:active, .wrap-content-info a:focus {
+    text-decoration: none;
+    color: #444;
+}
+
+.wrap-fastshift input[type=text]:focus, input[type=password]:focus, textarea:focus {
+    -webkit-box-shadow: 0px 5px 35px 0px rgba(29, 190, 114, 0.17);
+    box-shadow: 0px 5px 35px 0px rgba(29, 190, 114, 0.17);
+    border: 2px solid #1dbe72;
+}
+
+.wrap-fastshift label[for=woocommerce_payment-gateway-for-fastshift_useful_functions],
+.wrap-fastshift label[for=woocommerce_payment-gateway-for-fastshift_live_settings],
+.wrap-fastshift label[for=woocommerce_payment-gateway-for-fastshift_links] {
+    color: #379199;
+    border-bottom: 2px solid #1dbe72;
+    line-height: 1.7 !important;
+}
+
+#pluginMainWrap h4{
+    font-size: 15px;
+    color: #3e3e3e;
+}
+
+@media only screen and (max-width: 1600px) {
+    .wrap-fastshift {
+        right: 245px;
+    }
+
+}
+
+@media only screen and (max-width: 1400px) {
+    .wrap-fastshift {
+        right: 170px;
+    }
+
+}
+
+@media only screen and (max-width: 1300px) {
+    .wrap-fastshift {
+        right: 110px;
+    }
+
+}
+
+@media only screen and (max-width: 1200px) {
+    .wrap-fastshift {
+        right: 50px;
+    }
+
+}
+
