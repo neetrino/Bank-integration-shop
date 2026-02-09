@@ -78,6 +78,16 @@
 
 Остальные опции плагина можно посмотреть в коде (префикс `hkd_tax_service_` и `taxServiceSeqNumber`).
 
+### adgCode: где хранится и откуда взять
+
+| Где | Что |
+|-----|-----|
+| **В базе (глобально)** | Таблица **wp_options**: ключ `hkd_tax_service_atg_code` — код АТГ по умолчанию для всех товаров; `hkd_tax_service_shipping_atg_code` — код АТГ для доставки. Задаётся в настройках плагина (админка). |
+| **В базе (по товару)** | **post meta** у товара (WooCommerce product): ключ `atgCode`. Если у товара задан `atgCode` — плагин использует его; иначе — глобальный `hkd_tax_service_atg_code`. |
+| **Откуда взять значение для Next.js** | Из WordPress: `SELECT option_value FROM wp_options WHERE option_name = 'hkd_tax_service_atg_code'`. Для доставки — `hkd_tax_service_shipping_atg_code`. По товарам — из post meta по `product_id` (ключ `atgCode`). |
+| **Откуда взять список кодов (перечень АТГ)** | Официально: сайт **src.am** → раздел про НСКИ/классификатор (Excel 1406-Н, 875-Н). В плагине тот же перечень зашит в **admin/service/ATGCodeService.php** — массив кодов с описаниями (например `"9205" => "..."`). В настройках плагина админ выбирает код из этого списка. |
+| **В Next.js (этот проект)** | Код АТГ по умолчанию задаётся в **.env**: `EHDM_DEFAULT_ADG_CODE=2201`. Дублируется в **Private/ehdm-config.txt** как `DEFAULT_ADG_CODE=2201` для справки. |
+
 ---
 
 ## 3. Можно ли «вытащить» это из WordPress?
